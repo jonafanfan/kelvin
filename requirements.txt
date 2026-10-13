@@ -1,0 +1,6 @@
+torch>=2.5
+numpy
+pillow
+matplotlib
+gradio>=5
+pytest
