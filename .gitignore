@@ -1,0 +1,10 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datasets and trained models are too big for git
+data/
+checkpoints/
+*.pt
