@@ -49,7 +49,11 @@ python -m pytest       # run the automatic checks
 | [kelvin/editor/params.py](kelvin/editor/params.py) | The list of sliders, with plain-English descriptions |
 | [kelvin/editor/ops.py](kelvin/editor/ops.py) | The editing maths: one function per slider |
 | [kelvin/editor/histogram.py](kelvin/editor/histogram.py) | Draws the brightness graph |
+| [kelvin/ui/tokens.py](kelvin/ui/tokens.py) | The "Darkroom" design system: every colour and font, by name |
+| [kelvin/ui/theme.py](kelvin/ui/theme.py) | Turns those tokens into the app's look (Gradio theme + CSS) |
 | [app.py](app.py) | The web app (built with Gradio) |
 | [tests/](tests/) | Automatic checks that each slider behaves sensibly |
+
+![The Kelvin editor](docs/editor.png)
 
 Every slider goes from **-1 to +1**, and **0 means "no change"**. Keeping them all on one scale makes the AI's job simpler.
