@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# Lets the tests find the `kelvin` folder without installing it first.
+pythonpath = ["."]
+testpaths = ["tests"]
