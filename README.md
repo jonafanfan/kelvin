@@ -25,7 +25,7 @@ Step 5 only works because the editor is written in PyTorch, which can work out h
 
 ## Roadmap
 - [x] **Step 1:** Editor with sliders + live histogram (no AI yet)
-- [ ] **Step 2:** Rule-based "auto" button (e.g. "too dark? brighten"). This is the score to beat.
+- [x] **Step 2:** Rule-based "Auto" button: hand-written rules set the sliders and explain each change. This is the score to beat.
 - [ ] **Step 3:** First AI, trained on FiveK (Expert C), 4,500 photos to learn from and 500 to test
 - [ ] **Step 4:** AI sets the sliders in the app, with a one-line reason per change
 - [ ] **Step 5:** Extras: style picker (Experts A–E), learn *your* style, RAW files, Lightroom export
@@ -39,7 +39,7 @@ python -m venv .venv
 # Mac / Linux:  source .venv/bin/activate
 pip install -r requirements.txt
 
-python app.py          # open the link it prints, upload a photo, play with the sliders
+python app.py          # open the link it prints, upload a photo, play with the sliders or press Auto
 python -m pytest       # run the automatic checks
 ```
 
@@ -49,6 +49,7 @@ python -m pytest       # run the automatic checks
 | [kelvin/editor/params.py](kelvin/editor/params.py) | The list of sliders, with plain-English descriptions |
 | [kelvin/editor/ops.py](kelvin/editor/ops.py) | The editing maths: one function per slider |
 | [kelvin/editor/histogram.py](kelvin/editor/histogram.py) | Draws the brightness graph |
+| [kelvin/auto/rules.py](kelvin/auto/rules.py) | The Auto button: rules that measure the photo, set sliders, and say why |
 | [kelvin/ui/tokens.py](kelvin/ui/tokens.py) | The "Darkroom" design system: every colour and font, by name |
 | [kelvin/ui/theme.py](kelvin/ui/theme.py) | Turns those tokens into the app's look (Gradio theme + CSS) |
 | [app.py](app.py) | The web app (built with Gradio) |

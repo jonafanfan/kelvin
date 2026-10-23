@@ -6,6 +6,8 @@ Gradio styles things in two ways, so there are two parts here:
      outward from the middle, or the Warmth slider's orange-to-blue track.
 """
 
+import html
+
 import gradio as gr
 
 from . import tokens as t
@@ -123,6 +125,22 @@ footer {{ display: none !important; }}
 /* Photo and histogram cards */
 #k-photo, #k-histogram {{ border-radius: 14px !important; border: 1px solid {t.LINE} !important; }}
 #k-photo {{ background: {t.RAISED} !important; }}
+
+/* Auto: Daylight blue, because it's the AI's button */
+#k-auto {{ background: {t.DAYLIGHT} !important; border-color: {t.DAYLIGHT} !important; color: #08112A !important; }}
+#k-auto:hover {{ background: {t.DAYLIGHT_TEXT} !important; }}
+
+/* "Why Auto did that": one row per slider it moved */
+.k-reasons {{ background: {t.SURFACE}; border: 1px solid {t.LINE}; border-left: 3px solid {t.DAYLIGHT};
+              border-radius: 14px; padding: 14px 18px; }}
+.k-reasons h3 {{ margin: 0 0 8px; font-size: 13px; font-weight: 500; color: {t.MUTED}; }}
+.k-reasons p {{ margin: 0; color: {t.MUTED}; font-size: 14px; }}
+.k-reason {{ display: grid; grid-template-columns: 7.5em 3.5em 1fr; gap: 10px; padding: 6px 0;
+             border-top: 1px solid #232327; font-size: 14px; color: {t.TEXT_SOFT}; }}
+.k-reason b {{ color: {t.TEXT}; font-weight: 500; }}
+.k-reason code {{ font-family: '{t.FONT_MONO}', ui-monospace, monospace; color: {t.DAYLIGHT_TEXT};
+                  background: none; text-align: right; }}
+@media (max-width: 640px) {{ .k-reason {{ grid-template-columns: 1fr auto; }} .k-reason span {{ grid-column: 1 / -1; }} }}
 """
 
 # The Kelvin mark from the identity board: a "K" made of a bar and a chevron,
@@ -142,3 +160,18 @@ LOGO_SVG = f"""
 def header_html(filename: str | None = None) -> str:
     name = f'<span class="k-filename">{filename}</span>' if filename else ""
     return f'<div class="k-brand">{LOGO_SVG}<span class="k-wordmark">kelvin</span>{name}</div>'
+
+
+def reasons_html(rows: list[tuple[str, float, str]] | None = None) -> str:
+    """The "why" panel. `rows` is (slider label, value, reason) for each slider
+    Auto moved; None means Auto hasn't run yet, [] means it found nothing to fix."""
+    if rows is None:
+        body = "<p>Press <b>Auto</b> and Kelvin will set the sliders, and explain each change here.</p>"
+    elif not rows:
+        body = "<p>Nothing needed fixing: this photo already looks balanced.</p>"
+    else:
+        body = "".join(
+            f'<div class="k-reason"><b>{label}</b><code>{value:+.2f}</code><span>{html.escape(reason)}</span></div>'
+            for label, value, reason in rows
+        )
+    return f'<div class="k-reasons"><h3>Why Auto did that</h3>{body}</div>'
