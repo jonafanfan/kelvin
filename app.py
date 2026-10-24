@@ -1,4 +1,4 @@
-"""Kelvin's editor app (step 1: manual sliders, no AI yet).
+"""Kelvin's editor app (step 2: manual sliders plus a rule-based Auto button).
 
 Run it with:   python app.py
 Then open the link it prints (usually http://127.0.0.1:7860).
@@ -16,9 +16,10 @@ import numpy as np
 import torch
 from PIL import Image
 
+from kelvin.auto import suggest
 from kelvin.editor import SLIDERS, apply_edits
 from kelvin.editor.histogram import histogram_figure
-from kelvin.ui.theme import CSS, HEAD, build_theme, header_html
+from kelvin.ui.theme import CSS, HEAD, build_theme, header_html, reasons_html
 
 # Big phone photos have 12+ million pixels. Shrinking the preview keeps the
 # sliders responsive. (Saving at full size can come later.)
@@ -39,12 +40,31 @@ def render(preview: np.ndarray | None, *slider_values):
     if preview is None:
         return None, None
     params = {s.name: v for s, v in zip(SLIDERS, slider_values)}
-    # numpy is (height, width, 3); the editor wants (3, height, width)
-    tensor = torch.from_numpy(preview).permute(2, 0, 1)
     with torch.no_grad():  # no AI training happening, so skip the gradient bookkeeping
-        edited = apply_edits(tensor, params).permute(1, 2, 0).numpy()
+        edited = apply_edits(_to_tensor(preview), params).permute(1, 2, 0).numpy()
     before_after = (_to_8bit(preview), _to_8bit(edited))
     return before_after, histogram_figure(edited, original=preview)
+
+
+def auto(preview: np.ndarray | None):
+    """Let the rules set every slider, then redraw and explain."""
+    if preview is None:
+        return [gr.update()] * len(SLIDERS) + [None, None, reasons_html()]
+    with torch.no_grad():
+        s = suggest(_to_tensor(preview))
+    values = [s.params[slider.name] for slider in SLIDERS]
+    rows = [(slider.label, s.params[slider.name], s.reasons[slider.name]) for slider in SLIDERS if slider.name in s.reasons]
+    return [*values, *render(preview, *values), reasons_html(rows)]
+
+
+def reset(preview: np.ndarray | None):
+    values = [0] * len(SLIDERS)
+    return [*values, *render(preview, *values), reasons_html()]
+
+
+def _to_tensor(img: np.ndarray) -> torch.Tensor:
+    """numpy is (height, width, 3); the editor wants (3, height, width)."""
+    return torch.from_numpy(img).permute(2, 0, 1)
 
 
 def _to_8bit(img: np.ndarray) -> np.ndarray:
@@ -58,7 +78,8 @@ with gr.Blocks(title="Kelvin") as demo:
     with gr.Row(elem_id="k-header", equal_height=True):
         header = gr.HTML(header_html())
         with gr.Row(elem_id="k-header-buttons"):
-            reset = gr.Button("Reset all", variant="secondary", scale=0)
+            auto_button = gr.Button("Auto", variant="primary", scale=0, elem_id="k-auto")
+            reset_button = gr.Button("Reset all", variant="secondary", scale=0)
             upload = gr.UploadButton("Open photo", file_types=["image"], variant="secondary", scale=0)
 
     with gr.Row(equal_height=False):
@@ -72,13 +93,18 @@ with gr.Blocks(title="Kelvin") as demo:
                 label="Before / after (drag the line to compare)", elem_id="k-photo", interactive=False
             )
             histogram = gr.Plot(label="Histogram", elem_id="k-histogram")
+            reasons = gr.HTML(reasons_html())
 
     upload.upload(load_preview, inputs=upload, outputs=[preview_state, header]).then(
         render, inputs=[preview_state, *sliders], outputs=[photo, histogram]
-    )
+    ).then(reasons_html, outputs=reasons)
+    # .input (not .change) so this only fires when a person drags a slider.
+    # Auto and Reset set all 10 sliders at once and redraw a single time
+    # themselves; with .change, they'd trigger 10 redraws.
     for slider in sliders:
-        slider.change(render, inputs=[preview_state, *sliders], outputs=[photo, histogram])
-    reset.click(lambda: [0] * len(sliders), outputs=sliders)
+        slider.input(render, inputs=[preview_state, *sliders], outputs=[photo, histogram])
+    auto_button.click(auto, inputs=preview_state, outputs=[*sliders, photo, histogram, reasons])
+    reset_button.click(reset, inputs=preview_state, outputs=[*sliders, photo, histogram, reasons])
 
 
 if __name__ == "__main__":
