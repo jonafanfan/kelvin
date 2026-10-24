@@ -82,18 +82,20 @@ with gr.Blocks(title="Kelvin") as demo:
             reset_button = gr.Button("Reset all", variant="secondary", scale=0)
             upload = gr.UploadButton("Open photo", file_types=["image"], variant="secondary", scale=0)
 
-    with gr.Row(equal_height=False):
+    # On a phone these two columns stack. The CSS in kelvin/ui/theme.py then
+    # moves the photo to the top and pins it there while you scroll the sliders.
+    with gr.Row(equal_height=False, elem_id="k-main"):
         with gr.Column(scale=1, min_width=320, elem_id="k-sliders"):
             sliders = [
                 gr.Slider(-1, 1, value=0, step=0.01, label=s.label, info=s.help, elem_id=f"k-{s.name}")
                 for s in SLIDERS
             ]
-        with gr.Column(scale=2, min_width=480):
+        with gr.Column(scale=2, min_width=480, elem_id="k-view"):
             photo = gr.ImageSlider(
                 label="Before / after (drag the line to compare)", elem_id="k-photo", interactive=False
             )
             histogram = gr.Plot(label="Histogram", elem_id="k-histogram")
-            reasons = gr.HTML(reasons_html())
+            reasons = gr.HTML(reasons_html(), elem_id="k-reasons")
 
     upload.upload(load_preview, inputs=upload, outputs=[preview_state, header]).then(
         render, inputs=[preview_state, *sliders], outputs=[photo, histogram]
