@@ -57,9 +57,14 @@ def build_theme() -> gr.themes.Base:
 
 
 # Loads the display font for the wordmark (the theme only loads the UI fonts).
+# The <style> is here, not in CSS below, because Gradio rewrites every CSS rule
+# to apply only *inside* the app, so a rule can't reach the app's own outer box.
+# That box has "overflow: hidden", which stops the phone layout's pinned photo
+# ("position: sticky") from working; "clip" looks the same but doesn't.
 HEAD = (
     '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
     'family=Bricolage+Grotesque:opsz,wght@12..96,700&display=swap">'
+    "<style>@media (max-width: 900px) { .gradio-container { overflow: clip !important; } }</style>"
 )
 
 # Gradio keeps a percentage like "62%" in --range_progress for each slider.
@@ -141,6 +146,31 @@ footer {{ display: none !important; }}
 .k-reason code {{ font-family: '{t.FONT_MONO}', ui-monospace, monospace; color: {t.DAYLIGHT_TEXT};
                   background: none; text-align: right; }}
 @media (max-width: 640px) {{ .k-reason {{ grid-template-columns: 1fr auto; }} .k-reason span {{ grid-column: 1 / -1; }} }}
+
+/* Phones and narrow windows: the columns stack, so put the photo first and pin
+   it to the top of the screen while the sliders scroll underneath, like a
+   phone editing app. Then the histogram and the reasons below the sliders.
+   - "display: contents" makes the photo column's own box disappear, so the
+     photo, histogram and reasons sit directly in the row next to the sliders
+     and "order" can rearrange all four.
+   - "sticky" also needs a fix to Gradio's outer box: see HEAD above. */
+@media (max-width: 900px) {{
+  #k-view {{ display: contents; }}
+  #k-photo, #k-sliders, #k-histogram, #k-reasons {{ flex: 1 1 100% !important; min-width: 0 !important; }}
+  #k-photo {{ order: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 12px 16px -8px {t.INK}; }}
+  #k-photo img {{ max-height: 36vh; object-fit: contain; }}
+  #k-sliders {{ order: 1; }}
+  #k-histogram {{ order: 2; }}
+  #k-reasons {{ order: 3; }}
+}}
+
+/* Phones: logo on one line, the three header buttons side by side underneath */
+@media (max-width: 640px) {{
+  #k-header {{ flex-wrap: wrap !important; }}
+  .k-brand svg {{ flex-shrink: 0; }}
+  #k-header-buttons {{ flex: 1 1 100% !important; flex-wrap: nowrap !important; gap: 8px; }}
+  #k-header-buttons button {{ flex: 1 1 0 !important; min-width: 0 !important; padding: 0 8px; white-space: nowrap; }}
+}}
 """
 
 # The Kelvin mark from the identity board: a "K" made of a bar and a chevron,
