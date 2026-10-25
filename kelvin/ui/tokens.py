@@ -27,6 +27,10 @@ TUNGSTEN_TEXT = "#FF9A57"  # the same, lighter, for text on dark backgrounds
 DAYLIGHT = "#5B8CFF"  # 6500K: the AI
 DAYLIGHT_TEXT = "#8DB0FF"
 
+# The logo's dot fades from the AI's colour to yours, left to right: the one
+# place the two accents meet, because Kelvin is you and the model together.
+LOGO_DOT = [DAYLIGHT, "#C084C8", TUNGSTEN]  # blue, violet in between, orange
+
 # The kelvin scale, from cool to warm. Only ever used as the Warmth slider's track.
 KELVIN_SCALE = "linear-gradient(90deg, #4D7CFF 0%, #8DB4FF 16%, #CFE0FF 32%, #F3EEE6 48%, #FFC489 64%, #FF8A3D 82%, #FF5A12 100%)"
 
