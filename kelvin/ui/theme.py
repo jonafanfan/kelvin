@@ -174,14 +174,19 @@ footer {{ display: none !important; }}
 """
 
 # The Kelvin mark from the identity board: a "K" made of a bar and a chevron,
-# with a tungsten-orange dot where they meet, on a rounded dark tile.
+# with a dot where they meet, on a rounded dark tile. The dot is a gradient
+# from Daylight blue on the left to Tungsten orange on the right.
+_DOT_STOPS = "".join(
+    f'<stop offset="{i / (len(t.LOGO_DOT) - 1):g}" stop-color="{colour}"></stop>' for i, colour in enumerate(t.LOGO_DOT)
+)
 LOGO_SVG = f"""
 <svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true">
+  <defs><linearGradient id="k-logo-dot" x1="0" y1="0" x2="1" y2="0">{_DOT_STOPS}</linearGradient></defs>
   <rect width="100" height="100" rx="23" fill="#202023"></rect>
   <g transform="translate(18 18) scale(0.64)">
     <rect x="18" y="18" width="13" height="64" rx="6.5" fill="{t.TEXT}"></rect>
     <path d="M80 18L52 50L80 82" fill="none" stroke="{t.TEXT}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"></path>
-    <circle cx="52" cy="50" r="10" fill="{t.TUNGSTEN}"></circle>
+    <circle cx="52" cy="50" r="10" fill="url(#k-logo-dot)"></circle>
   </g>
 </svg>
 """
