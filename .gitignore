@@ -5,6 +5,6 @@ __pycache__/
 .pytest_cache/
 
 # Datasets and trained models are too big for git
-data/
-checkpoints/
+/data/
+/checkpoints/
 *.pt
