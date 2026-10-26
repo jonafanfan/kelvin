@@ -27,9 +27,10 @@ from .prepare_fivek import DATA_DIR, MATCHES_FILE
 TRAIN_LAST = 4500  # a0001 ... a4500 are for training, a4501 ... a5000 for testing
 
 # Pairs whose before and after don't line up are left out (see
-# prepare_fivek.match_score). Real pairs score 0.68 or more, even when the
-# expert changed the photo a lot, so 0.5 only catches genuine mix-ups.
-MIN_MATCH = 0.5
+# prepare_fivek.match_score). Mixed-up pairs score about 0 to 0.1. Real pairs
+# score 0.5 or more, the lowest being photos the expert rescued from near
+# white or near black, where the edit reveals or hides a lot of detail.
+MIN_MATCH = 0.3
 
 
 def photo_number(name: str) -> int:

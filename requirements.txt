@@ -4,5 +4,4 @@ pillow
 matplotlib
 gradio>=5
 pytest
-huggingface_hub
-pyarrow
+gdown
