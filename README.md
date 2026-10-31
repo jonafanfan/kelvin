@@ -45,6 +45,13 @@ python -m kelvin.model.train          # once: train the AI (~25 min on a laptop)
 python -m pytest       # run the automatic checks
 ```
 
+## Put it online
+```bash
+hf auth login              # once: paste a "write" token from huggingface.co/settings/tokens
+python -m kelvin.deploy    # uploads the app and the trained AI to a free Hugging Face Space
+```
+Open the `https://<you>-kelvin.hf.space` link it prints. To install Kelvin as an app, tap **Add to Home Screen** on a phone, or click the install icon in your browser's address bar on a computer. It then opens in its own window with the Kelvin icon.
+
 ## Project layout
 | File | What it is |
 |---|---|
@@ -59,6 +66,7 @@ python -m pytest       # run the automatic checks
 | [kelvin/ui/tokens.py](kelvin/ui/tokens.py) | The "Darkroom" design system: every colour and font, by name |
 | [kelvin/ui/theme.py](kelvin/ui/theme.py) | Turns those tokens into the app's look (Gradio theme + CSS) |
 | [app.py](app.py) | The web app (built with Gradio) |
+| [kelvin/deploy.py](kelvin/deploy.py) | Puts the app online as a Hugging Face Space |
 | [tests/](tests/) | Automatic checks that each slider behaves sensibly |
 
 ![The Kelvin editor](docs/editor.png)
