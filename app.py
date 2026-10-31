@@ -33,7 +33,7 @@ PREVIEW_MAX_SIDE = 1024
 ICON = Path(__file__).parent / "kelvin" / "ui" / "icon.png"  # the logo, for the browser tab and the installed app
 
 AI = load_trained(CHECKPOINT) if CHECKPOINT.exists() else None
-AI_TITLE = "What the AI changed"
+AI_TITLE = "What was changed"
 RULES_NOTE = f"No trained AI found ({CHECKPOINT}), so these come from the hand-written rules."
 
 

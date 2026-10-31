@@ -113,7 +113,7 @@ function showReasons(rows) {
     body = rows
       .map(([label, value, reason]) => `<div class="k-reason"><b>${label}</b><code>${value > 0 ? "+" : ""}${value.toFixed(2)}</code><span>${reason}</span></div>`)
       .join("");
-  $("reasons").innerHTML = `<h3>What the AI changed</h3>${body}`;
+  $("reasons").innerHTML = `<h3>What was changed</h3>${body}`;
 }
 
 // ---------------------------------------------------------------------------
