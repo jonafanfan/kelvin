@@ -16,6 +16,30 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
+  <!-- Welcome: what you see first, until a photo is opened -->
+  <section class="k-welcome" id="welcome">
+    <svg width="88" height="88" viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="k-logo-dot-big" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5B8CFF"></stop>
+          <stop offset="0.5" stop-color="#C084C8"></stop>
+          <stop offset="1" stop-color="#FF7A2E"></stop>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="23" fill="#202023"></rect>
+      <g transform="translate(18 18) scale(0.64)">
+        <rect x="18" y="18" width="13" height="64" rx="6.5" fill="#EDEDED"></rect>
+        <path d="M80 18L52 50L80 82" fill="none" stroke="#EDEDED" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"></path>
+        <circle cx="52" cy="50" r="10" fill="url(#k-logo-dot-big)"></circle>
+      </g>
+    </svg>
+    <h1 class="k-wordmark">kelvin</h1>
+    <p class="k-caption">AI photo grading, powered by ML</p>
+    <button id="welcome-open" class="k-primary">Open photo</button>
+    <p class="k-small"><span class="k-drop-hint">Or drop one here. </span>It stays on your device: Kelvin edits it right in your browser.</p>
+  </section>
+
+  <div id="editor" hidden>
   <header class="k-header">
     <div class="k-brand">
       <svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true">
@@ -50,10 +74,6 @@
 
     <div class="k-view">
       <div class="k-photo" id="photo">
-        <div class="k-empty" id="empty">
-          <p>Open a photo to start, or drop one here.</p>
-          <p class="k-small">It stays on your device: Kelvin edits it right here in your browser.</p>
-        </div>
         <div class="k-compare" id="compare" hidden>
           <canvas id="after"></canvas>
           <canvas id="before"></canvas>
@@ -68,5 +88,6 @@
       <div class="k-reasons" id="reasons"></div>
     </div>
   </main>
+  </div>
 </body>
 </html>

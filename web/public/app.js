@@ -140,8 +140,11 @@ async function openPhoto(file) {
   ctx.drawImage(photo, 0, 0, width, height);
   state.preview = toFloats(ctx.getImageData(0, 0, width, height).data);
 
-  $("empty").hidden = true;
+  $("welcome").hidden = true;
+  $("editor").hidden = false;
   $("compare").hidden = false;
+  // Pulse the Auto button a few times, to invite a first tap
+  $("auto").classList.add("k-pulse");
   for (const id of ["auto", "reset", "save"]) $(id).disabled = false;
   for (const input of document.querySelectorAll("input[type=range]")) input.disabled = false;
   reset();
@@ -154,18 +157,19 @@ function reset() {
 }
 
 $("open").addEventListener("click", () => $("file").click());
+$("welcome-open").addEventListener("click", () => $("file").click());
 $("file").addEventListener("change", (e) => openPhoto(e.target.files[0]));
 $("reset").addEventListener("click", reset);
 
 // Drag and drop a photo anywhere on the page
 addEventListener("dragover", (e) => {
   e.preventDefault();
-  $("photo").classList.add("dragging");
+  document.body.classList.add("dragging");
 });
-addEventListener("dragleave", () => $("photo").classList.remove("dragging"));
+addEventListener("dragleave", () => document.body.classList.remove("dragging"));
 addEventListener("drop", (e) => {
   e.preventDefault();
-  $("photo").classList.remove("dragging");
+  document.body.classList.remove("dragging");
   openPhoto(e.dataTransfer.files[0]);
 });
 
@@ -175,6 +179,7 @@ addEventListener("drop", (e) => {
 
 $("auto").addEventListener("click", async () => {
   const button = $("auto");
+  button.classList.remove("k-pulse");
   button.disabled = true;
   button.textContent = "Thinking…";
   try {

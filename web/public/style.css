@@ -54,6 +54,24 @@ button:disabled { opacity: 0.45; cursor: default; }
 .k-auto { background: var(--daylight); border-color: var(--daylight); color: #08112A; }
 .k-auto:hover:not(:disabled) { background: var(--daylight-text); }
 
+/* The first thing you see is the welcome screen: logo, name, caption and one button */
+.k-welcome { min-height: 88vh; min-height: 88dvh; display: flex; flex-direction: column; align-items: center;
+             justify-content: center; text-align: center; gap: 4px; border-radius: 20px; }
+.k-welcome h1 { margin: 18px 0 0; font-size: 56px; line-height: 1; }
+.k-caption { margin: 10px 0 32px; font-size: 17px; color: var(--text-soft); }
+.k-welcome .k-small { margin-top: 16px; max-width: 30em; }
+.k-primary { min-height: 52px; padding: 0 32px; font-size: 16px; border-color: var(--text); background: var(--text); color: var(--ink); }
+.k-primary:hover:not(:disabled) { background: var(--text-soft); }
+
+/* Auto pulses a few times when a photo opens, as a hint to tap it.
+   A soft blue ring grows out of the button and fades. */
+.k-pulse { animation: k-pulse 1.6s ease-out 4; }
+@keyframes k-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(91, 140, 255, 0.7); }
+  70%, 100% { box-shadow: 0 0 0 14px rgba(91, 140, 255, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .k-pulse { animation: none; } }
+
 /* Two columns: sliders on the left, photo, histogram and reasons on the right */
 .k-main { display: grid; grid-template-columns: minmax(320px, 1fr) 2fr; gap: 16px; align-items: start; }
 .k-view { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -106,9 +124,7 @@ input[type=range]::-moz-range-thumb {
   background: var(--raised); border: 1px solid var(--line); border-radius: 14px;
   min-height: 320px; display: grid; place-items: center; padding: 12px; overflow: hidden;
 }
-.k-photo.dragging { border-color: var(--daylight); }
-.k-empty { text-align: center; color: var(--text-soft); }
-.k-empty p { margin: 4px 0; }
+.dragging .k-photo, .dragging .k-welcome { outline: 2px dashed var(--daylight); outline-offset: -12px; }
 .k-small { font-size: 12.5px; color: var(--muted); }
 .k-compare { position: relative; max-width: 100%; line-height: 0; touch-action: none; cursor: ew-resize; user-select: none; }
 .k-compare canvas { display: block; max-width: 100%; max-height: 72vh; border-radius: 6px; }
@@ -162,3 +178,6 @@ input[type=range]::-moz-range-thumb {
   .k-reason { grid-template-columns: 1fr auto; }
   .k-reason span { grid-column: 1 / -1; }
 }
+
+/* Touch screens can't drag a file onto the page, so don't suggest it */
+@media (hover: none) { .k-drop-hint { display: none; } }
