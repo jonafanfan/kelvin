@@ -91,11 +91,9 @@ METHODS = {"nothing": nothing, "auto": auto, "best": best_sliders}
 
 def trained_model(checkpoint: Path):
     """The AI from kelvin.model.train, as a method: it only looks at `before`."""
-    from kelvin.model import SliderNet  # imported here: the other methods don't need torchvision
+    from kelvin.model import load_trained  # imported here: the other methods don't need torchvision
 
-    model = SliderNet(pretrained=False)  # the checkpoint replaces every weight anyway
-    model.load_state_dict(torch.load(checkpoint))
-    model.eval()
+    model = load_trained(checkpoint)
     return lambda before, after: model(before)
 
 

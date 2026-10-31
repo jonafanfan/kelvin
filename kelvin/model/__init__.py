@@ -1,3 +1,3 @@
-from .net import SliderNet
+from .net import SliderNet, load_trained
 
-__all__ = ["SliderNet"]
+__all__ = ["SliderNet", "load_trained"]

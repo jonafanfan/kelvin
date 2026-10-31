@@ -91,3 +91,11 @@ class SliderNet(nn.Module):
         both = torch.cat([seen, histograms(photo)], dim=1)
         # tanh squashes any number into -1...1, the sliders' range
         return torch.tanh(self.head(both))
+
+
+def load_trained(checkpoint) -> SliderNet:
+    """The trained AI, ready to use (not to train)."""
+    model = SliderNet(pretrained=False)  # the checkpoint replaces every weight anyway
+    model.load_state_dict(torch.load(checkpoint))
+    model.eval()  # "using" mode: some layers act slightly differently while learning
+    return model

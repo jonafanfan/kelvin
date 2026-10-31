@@ -140,6 +140,7 @@ footer {{ display: none !important; }}
               border-radius: 14px; padding: 14px 18px; }}
 .k-reasons h3 {{ margin: 0 0 8px; font-size: 13px; font-weight: 500; color: {t.MUTED}; }}
 .k-reasons p {{ margin: 0; color: {t.MUTED}; font-size: 14px; }}
+.k-reasons p.k-note {{ margin-top: 8px; font-size: 12px; }}
 .k-reason {{ display: grid; grid-template-columns: 7.5em 3.5em 1fr; gap: 10px; padding: 6px 0;
              border-top: 1px solid #232327; font-size: 14px; color: {t.TEXT_SOFT}; }}
 .k-reason b {{ color: {t.TEXT}; font-weight: 500; }}
@@ -197,9 +198,10 @@ def header_html(filename: str | None = None) -> str:
     return f'<div class="k-brand">{LOGO_SVG}<span class="k-wordmark">kelvin</span>{name}</div>'
 
 
-def reasons_html(rows: list[tuple[str, float, str]] | None = None) -> str:
+def reasons_html(rows: list[tuple[str, float, str]] | None = None, title: str = "Why Auto did that", note: str = "") -> str:
     """The "why" panel. `rows` is (slider label, value, reason) for each slider
-    Auto moved; None means Auto hasn't run yet, [] means it found nothing to fix."""
+    Auto moved; None means Auto hasn't run yet, [] means it found nothing to fix.
+    `note` is an optional line under the reasons."""
     if rows is None:
         body = "<p>Press <b>Auto</b> and Kelvin will set the sliders, and explain each change here.</p>"
     elif not rows:
@@ -209,4 +211,6 @@ def reasons_html(rows: list[tuple[str, float, str]] | None = None) -> str:
             f'<div class="k-reason"><b>{label}</b><code>{value:+.2f}</code><span>{html.escape(reason)}</span></div>'
             for label, value, reason in rows
         )
-    return f'<div class="k-reasons"><h3>Why Auto did that</h3>{body}</div>'
+    if note:
+        body += f'<p class="k-note">{html.escape(note)}</p>'
+    return f'<div class="k-reasons"><h3>{html.escape(title)}</h3>{body}</div>'
