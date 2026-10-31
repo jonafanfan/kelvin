@@ -30,6 +30,7 @@ from kelvin.ui.theme import CSS, HEAD, build_theme, header_html, reasons_html
 # Big phone photos have 12+ million pixels. Shrinking the preview keeps the
 # sliders responsive. (Saving at full size can come later.)
 PREVIEW_MAX_SIDE = 1024
+ICON = Path(__file__).parent / "kelvin" / "ui" / "icon.png"  # the logo, for the browser tab and the installed app
 
 AI = load_trained(CHECKPOINT) if CHECKPOINT.exists() else None
 AI_TITLE = "What the AI changed"
@@ -126,4 +127,6 @@ with gr.Blocks(title="Kelvin") as demo:
 
 if __name__ == "__main__":
     # Gradio 6 takes the look (theme, extra CSS, fonts) at launch, not in gr.Blocks.
-    demo.launch(theme=build_theme(), css=CSS, head=HEAD)
+    # pwa=True makes it installable: "Add to Home Screen" on a phone, or the
+    # install button in a computer's browser, opens Kelvin in its own window.
+    demo.launch(theme=build_theme(), css=CSS, head=HEAD, pwa=True, favicon_path=ICON)
