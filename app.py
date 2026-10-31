@@ -33,10 +33,6 @@ PREVIEW_MAX_SIDE = 1024
 
 AI = load_trained(CHECKPOINT) if CHECKPOINT.exists() else None
 AI_TITLE = "What the AI changed"
-AI_NOTE = (
-    "The AI learned these choices from 4,000 photos edited by a professional. "
-    "It can't say why it chose them, so each line measures what that slider did to your photo."
-)
 RULES_NOTE = f"No trained AI found ({CHECKPOINT}), so these come from the hand-written rules."
 
 
@@ -68,7 +64,7 @@ def auto(preview: np.ndarray | None):
         s = ai_suggest(_to_tensor(preview), AI) if AI else suggest(_to_tensor(preview))
     values = [s.params[slider.name] for slider in SLIDERS]
     rows = [(slider.label, s.params[slider.name], s.reasons[slider.name]) for slider in SLIDERS if slider.name in s.reasons]
-    panel = reasons_html(rows, AI_TITLE, AI_NOTE) if AI else reasons_html(rows, note=RULES_NOTE)
+    panel = reasons_html(rows, AI_TITLE) if AI else reasons_html(rows, note=RULES_NOTE)
     return [*values, *render(preview, *values), panel]
 
 

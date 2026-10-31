@@ -1,8 +1,6 @@
 """Checks for the AI version of Auto. They use a stand-in "AI" that always
 picks the same sliders, so they run without the trained weights."""
 
-import re
-
 import torch
 
 from kelvin.auto import ai_suggest
@@ -33,14 +31,6 @@ def test_every_moved_slider_is_explained_and_no_others():
     assert set(s.reasons) == {"temp", "exposure", "shadows", "saturation"}
     assert "cooler" in s.reasons["temp"]
     assert "greyer" in s.reasons["saturation"]
-
-
-def test_explanations_measure_the_change():
-    s = ai_suggest(photo(), fake_ai(exposure=0.5))
-    reason = s.reasons["exposure"]
-    assert reason.startswith("Brightened")
-    before, after = map(int, re.search(r"(\d+)% → (\d+)%", reason).groups())
-    assert after > before
 
 
 def test_load_trained_round_trip(tmp_path):

@@ -52,7 +52,7 @@ python -m pytest       # run the automatic checks
 | [kelvin/editor/ops.py](kelvin/editor/ops.py) | The editing maths: one function per slider |
 | [kelvin/editor/histogram.py](kelvin/editor/histogram.py) | Draws the brightness graph |
 | [kelvin/auto/rules.py](kelvin/auto/rules.py) | The first Auto button: rules that measure the photo, set sliders, and say why |
-| [kelvin/auto/ai.py](kelvin/auto/ai.py) | Auto with the trained AI, plus a measured one-line explanation per slider |
+| [kelvin/auto/ai.py](kelvin/auto/ai.py) | Auto with the trained AI, plus a one-line explanation per slider |
 | [kelvin/model/](kelvin/model/) | The AI (net.py) and how it's trained (train.py) |
 | [kelvin/data/](kelvin/data/) | Downloads the FiveK photos and serves them for training |
 | [kelvin/eval/](kelvin/eval/) | Scores any method against the expert's edits |
