@@ -6,3 +6,5 @@ matplotlib
 gradio>=5
 pytest
 gdown
+onnx
+onnxscript

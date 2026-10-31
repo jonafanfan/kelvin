@@ -8,3 +8,10 @@ __pycache__/
 /data/
 /checkpoints/
 *.pt
+
+# Web app: installed packages, the copied AI runtime, and the exported AI
+# (made by `npm run setup` and `python -m kelvin.model.export`)
+/web/node_modules/
+/web/public/vendor/
+/web/public/slider_net.onnx
+/web/.wrangler/
