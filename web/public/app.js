@@ -74,6 +74,10 @@ function scheduleRender() {
 }
 
 function render() {
+  if (readyToShare) {
+    readyToShare = null; // the photo has changed, so the one waiting to be saved is out of date
+    $("save").textContent = "Save";
+  }
   state.edited = applyEdits(state.preview, state.values);
   putPixels($("after"), state.edited);
   drawHistogram($("histogram"), state.edited, state.preview);
@@ -214,45 +218,88 @@ $("compare").addEventListener("pointermove", (e) => {
 });
 
 // ---------------------------------------------------------------------------
-// Save: apply the edits to the full-size photo and download it
+// Save: apply the edits to the full-size photo. On a phone, open the share
+// sheet so it's one tap to "Save Image" into the camera roll (websites aren't
+// allowed to put photos there directly). On a computer, download it.
 // ---------------------------------------------------------------------------
+
+const onPhone = matchMedia("(hover: none)").matches;
+let readyToShare = null; // a finished photo waiting for a second tap (see below)
 
 $("save").addEventListener("click", async () => {
   const button = $("save");
+  if (readyToShare) {
+    const file = readyToShare;
+    readyToShare = null;
+    button.textContent = "Save";
+    return share(file);
+  }
   button.disabled = true;
   button.textContent = "Saving…";
   await new Promise((done) => setTimeout(done, 20)); // let the button update before the busy part
   try {
-    const { width, height } = state.photo;
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(state.photo, 0, 0);
-    // A strip at a time, so a huge photo doesn't need huge amounts of memory at once
-    const strip = 256;
-    for (let top = 0; top < height; top += strip) {
-      const rowsHere = Math.min(strip, height - top);
-      const part = ctx.getImageData(0, top, width, rowsHere);
-      const edited = applyEdits(toFloats(part.data), state.values);
-      for (let i = 0, j = 0; i < edited.length; i += 3, j += 4) {
-        part.data[j] = edited[i] * 255 + 0.5;
-        part.data[j + 1] = edited[i + 1] * 255 + 0.5;
-        part.data[j + 2] = edited[i + 2] * 255 + 0.5;
+    const blob = await editFullSize();
+    const file = new File([blob], state.name.replace(/\.[^.]+$/, "") + "-kelvin.jpg", { type: "image/jpeg" });
+    if (onPhone && navigator.canShare?.({ files: [file] })) {
+      // Phones only open the share sheet straight after a tap. Editing a big
+      // photo can take long enough that the browser says no; then the button
+      // asks for one more tap, which counts as a fresh one.
+      if ((await share(file)) === "too late") {
+        readyToShare = file;
+        button.disabled = false;
+        button.textContent = "Tap to save";
+        return;
       }
-      ctx.putImageData(part, 0, top);
+    } else {
+      download(file);
     }
-    const blob = await new Promise((done) => canvas.toBlob(done, "image/jpeg", 0.92));
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = state.name.replace(/\.[^.]+$/, "") + "-kelvin.jpg";
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(link.href), 10000);
   } finally {
-    button.disabled = false;
-    button.textContent = "Save";
+    if (!readyToShare) {
+      button.disabled = false;
+      button.textContent = "Save";
+    }
   }
 });
+
+async function share(file) {
+  try {
+    await navigator.share({ files: [file] });
+  } catch (error) {
+    if (error.name === "NotAllowedError") return "too late";
+    if (error.name !== "AbortError") download(file); // AbortError: they closed the share sheet
+  }
+}
+
+function download(file) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(file);
+  link.download = file.name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+}
+
+async function editFullSize() {
+  const { width, height } = state.photo;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(state.photo, 0, 0);
+  // A strip at a time, so a huge photo doesn't need huge amounts of memory at once
+  const strip = 256;
+  for (let top = 0; top < height; top += strip) {
+    const rowsHere = Math.min(strip, height - top);
+    const part = ctx.getImageData(0, top, width, rowsHere);
+    const edited = applyEdits(toFloats(part.data), state.values);
+    for (let i = 0, j = 0; i < edited.length; i += 3, j += 4) {
+      part.data[j] = edited[i] * 255 + 0.5;
+      part.data[j + 1] = edited[i + 1] * 255 + 0.5;
+      part.data[j + 2] = edited[i + 2] * 255 + 0.5;
+    }
+    ctx.putImageData(part, 0, top);
+  }
+  return new Promise((done) => canvas.toBlob(done, "image/jpeg", 0.92));
+}
 
 // ---------------------------------------------------------------------------
 // Start-up
