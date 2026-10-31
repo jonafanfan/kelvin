@@ -1,6 +1,8 @@
 torch>=2.5
+torchvision
 numpy
 pillow
 matplotlib
 gradio>=5
 pytest
+gdown

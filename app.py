@@ -1,4 +1,8 @@
-"""Kelvin's editor app (step 2: manual sliders plus a rule-based Auto button).
+"""Kelvin's editor app: manual sliders plus an Auto button.
+
+Auto uses the trained AI (step 4) if its weights are in checkpoints/. They
+aren't in git, so on a fresh copy run  python -m kelvin.model.train  first.
+Without them, Auto falls back to the hand-written rules from step 2.
 
 Run it with:   python app.py
 Then open the link it prints (usually http://127.0.0.1:7860).
@@ -16,14 +20,21 @@ import numpy as np
 import torch
 from PIL import Image
 
-from kelvin.auto import suggest
+from kelvin.auto import ai_suggest, suggest
 from kelvin.editor import SLIDERS, apply_edits
 from kelvin.editor.histogram import histogram_figure
+from kelvin.model import load_trained
+from kelvin.model.train import CHECKPOINT
 from kelvin.ui.theme import CSS, HEAD, build_theme, header_html, reasons_html
 
 # Big phone photos have 12+ million pixels. Shrinking the preview keeps the
 # sliders responsive. (Saving at full size can come later.)
 PREVIEW_MAX_SIDE = 1024
+ICON = Path(__file__).parent / "kelvin" / "ui" / "icon.png"  # the logo, for the browser tab and the installed app
+
+AI = load_trained(CHECKPOINT) if CHECKPOINT.exists() else None
+AI_TITLE = "What the AI changed"
+RULES_NOTE = f"No trained AI found ({CHECKPOINT}), so these come from the hand-written rules."
 
 
 def load_preview(path: str | None):
@@ -47,14 +58,15 @@ def render(preview: np.ndarray | None, *slider_values):
 
 
 def auto(preview: np.ndarray | None):
-    """Let the rules set every slider, then redraw and explain."""
+    """Let the AI (or, without one, the rules) set every slider, then redraw and explain."""
     if preview is None:
         return [gr.update()] * len(SLIDERS) + [None, None, reasons_html()]
     with torch.no_grad():
-        s = suggest(_to_tensor(preview))
+        s = ai_suggest(_to_tensor(preview), AI) if AI else suggest(_to_tensor(preview))
     values = [s.params[slider.name] for slider in SLIDERS]
     rows = [(slider.label, s.params[slider.name], s.reasons[slider.name]) for slider in SLIDERS if slider.name in s.reasons]
-    return [*values, *render(preview, *values), reasons_html(rows)]
+    panel = reasons_html(rows, AI_TITLE) if AI else reasons_html(rows, note=RULES_NOTE)
+    return [*values, *render(preview, *values), panel]
 
 
 def reset(preview: np.ndarray | None):
@@ -111,4 +123,6 @@ with gr.Blocks(title="Kelvin") as demo:
 
 if __name__ == "__main__":
     # Gradio 6 takes the look (theme, extra CSS, fonts) at launch, not in gr.Blocks.
-    demo.launch(theme=build_theme(), css=CSS, head=HEAD)
+    # pwa=True makes it installable: "Add to Home Screen" on a phone, or the
+    # install button in a computer's browser, opens Kelvin in its own window.
+    demo.launch(theme=build_theme(), css=CSS, head=HEAD, pwa=True, favicon_path=ICON)

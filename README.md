@@ -26,8 +26,8 @@ Step 5 only works because the editor is written in PyTorch, which can work out h
 ## Roadmap
 - [x] **Step 1:** Editor with sliders + live histogram (no AI yet)
 - [x] **Step 2:** Rule-based "Auto" button: hand-written rules set the sliders and explain each change. This is the score to beat.
-- [ ] **Step 3:** First AI, trained on FiveK (Expert C), 4,500 photos to learn from and 500 to test
-- [ ] **Step 4:** AI sets the sliders in the app, with a one-line reason per change
+- [x] **Step 3:** First AI, trained on FiveK (Expert C), 4,500 photos to learn from and 500 to test
+- [x] **Step 4:** AI sets the sliders in the app, with a one-line reason per change
 - [ ] **Step 5:** Extras: style picker (Experts A–E), learn *your* style, RAW files, Lightroom export
 
 ## Getting started
@@ -40,8 +40,17 @@ python -m venv .venv
 pip install -r requirements.txt
 
 python app.py          # open the link it prints, upload a photo, play with the sliders or press Auto
+python -m kelvin.data.prepare_fivek   # once: download the FiveK photos (~6 GB)
+python -m kelvin.model.train          # once: train the AI (~25 min on a laptop); Auto uses it from then on
 python -m pytest       # run the automatic checks
 ```
+
+## Put it online
+```bash
+hf auth login              # once: paste a "write" token from huggingface.co/settings/tokens
+python -m kelvin.deploy    # uploads the app and the trained AI to a free Hugging Face Space
+```
+Open the `https://<you>-kelvin.hf.space` link it prints. To install Kelvin as an app, tap **Add to Home Screen** on a phone, or click the install icon in your browser's address bar on a computer. It then opens in its own window with the Kelvin icon.
 
 ## Project layout
 | File | What it is |
@@ -49,10 +58,15 @@ python -m pytest       # run the automatic checks
 | [kelvin/editor/params.py](kelvin/editor/params.py) | The list of sliders, with plain-English descriptions |
 | [kelvin/editor/ops.py](kelvin/editor/ops.py) | The editing maths: one function per slider |
 | [kelvin/editor/histogram.py](kelvin/editor/histogram.py) | Draws the brightness graph |
-| [kelvin/auto/rules.py](kelvin/auto/rules.py) | The Auto button: rules that measure the photo, set sliders, and say why |
+| [kelvin/auto/rules.py](kelvin/auto/rules.py) | The first Auto button: rules that measure the photo, set sliders, and say why |
+| [kelvin/auto/ai.py](kelvin/auto/ai.py) | Auto with the trained AI, plus a one-line explanation per slider |
+| [kelvin/model/](kelvin/model/) | The AI (net.py) and how it's trained (train.py) |
+| [kelvin/data/](kelvin/data/) | Downloads the FiveK photos and serves them for training |
+| [kelvin/eval/](kelvin/eval/) | Scores any method against the expert's edits |
 | [kelvin/ui/tokens.py](kelvin/ui/tokens.py) | The "Darkroom" design system: every colour and font, by name |
 | [kelvin/ui/theme.py](kelvin/ui/theme.py) | Turns those tokens into the app's look (Gradio theme + CSS) |
 | [app.py](app.py) | The web app (built with Gradio) |
+| [kelvin/deploy.py](kelvin/deploy.py) | Puts the app online as a Hugging Face Space |
 | [tests/](tests/) | Automatic checks that each slider behaves sensibly |
 
 ![The Kelvin editor](docs/editor.png)
