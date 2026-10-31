@@ -37,3 +37,10 @@ SLIDER_NAMES = [s.name for s in SLIDERS]
 def neutral_params() -> dict:
     """All sliders at zero, which leaves the photo unchanged."""
     return {name: 0.0 for name in SLIDER_NAMES}
+
+
+def as_params(values) -> dict:
+    """A (batch, 10) tensor of slider values, one row per photo, in SLIDERS
+    order -> {"temp": (batch,), "tint": (batch,), ...}, ready for apply_edits.
+    This is the format the AI produces: 10 numbers per photo."""
+    return {name: values[:, i] for i, name in enumerate(SLIDER_NAMES)}

@@ -14,27 +14,29 @@ from kelvin.data.prepare_fivek import centre_crop, match_score, save_pair, to_sr
 
 @pytest.fixture
 def fake_fivek(tmp_path):
-    """Four fake photo pairs: three training photos and one test photo."""
+    """Five fake photo pairs: three training, one validation and one test photo."""
     for folder in ("input", "expertC"):
         (tmp_path / folder).mkdir()
-    for name in ("a0001-x", "a0002-y", "a4500-z", "a4501-w"):
+    for name in ("a0001-x", "a0002-y", "a4000-z", "a4500-v", "a4501-w"):
         Image.new("RGB", (60, 40), (200, 100, 50)).save(tmp_path / "input" / f"{name}.jpg")
         Image.new("RGB", (60, 40), (220, 120, 60)).save(tmp_path / "expertC" / f"{name}.jpg")
     return tmp_path
 
 
 def test_split_is_by_photo_number(fake_fivek):
-    assert split_names("train", fake_fivek) == ["a0001-x", "a0002-y", "a4500-z"]
+    assert split_names("train", fake_fivek) == ["a0001-x", "a0002-y", "a4000-z"]
+    assert split_names("val", fake_fivek) == ["a4500-v"]
     assert split_names("test", fake_fivek) == ["a4501-w"]
 
 
-def test_train_and_test_never_share_a_photo(fake_fivek):
-    assert not set(split_names("train", fake_fivek)) & set(split_names("test", fake_fivek))
+def test_splits_never_share_a_photo(fake_fivek):
+    train, val, test = (set(split_names(s, fake_fivek)) for s in ("train", "val", "test"))
+    assert not (train & val or train & test or val & test)
 
 
 def test_badly_matched_pairs_are_left_out(fake_fivek):
-    (fake_fivek / "matches.csv").write_text("a0001-x,0.95\na0002-y,0.10\na4500-z,0.70\n")
-    assert split_names("train", fake_fivek) == ["a0001-x", "a4500-z"]
+    (fake_fivek / "matches.csv").write_text("a0001-x,0.95\na0002-y,0.10\na4000-z,0.70\n")
+    assert split_names("train", fake_fivek) == ["a0001-x", "a4000-z"]
 
 
 def test_unknown_split_is_refused(fake_fivek):
@@ -60,7 +62,9 @@ def test_examples_are_square_tensors_from_0_to_1(fake_fivek):
     assert after.mean() > before.mean()
 
 
-def test_test_photos_are_never_flipped(fake_fivek):
+def test_only_training_photos_are_flipped(fake_fivek):
+    assert FiveK("train", data_dir=fake_fivek).flip
+    assert not FiveK("val", data_dir=fake_fivek).flip
     assert not FiveK("test", data_dir=fake_fivek).flip
 
 

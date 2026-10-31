@@ -4,12 +4,17 @@ A "Dataset" is PyTorch's name for "a numbered list of examples". Ask it for
 example number 7 and it gives you one (before, after) pair of photos, ready
 to use. Training asks for thousands of these, in a random order.
 
-Training photos and test photos
--------------------------------
-The photos are named a0001 ... a5000. Like most research papers, we learn from
-the first 4,500 and test on the last 500, which the AI never sees while it
-learns. That's how we can tell real skill from memorising: a student who has
-only memorised the past papers does badly on a new exam.
+Training, validation and test photos
+------------------------------------
+The photos are named a0001 ... a5000, and split three ways:
+  train  a0001 ... a4000  the AI learns from these
+  val    a4001 ... a4500  "practice exams": used to make choices while
+                          training, like when to stop
+  test   a4501 ... a5000  the real exam, used once at the end
+The test photos are the same last 500 that research papers use. They must
+never influence any choice we make, or the test stops being a fair exam:
+a student who has seen the exam paper does well without having learned
+anything. Validation photos are how we make choices without peeking.
 
 Run the download first:   python -m kelvin.data.prepare_fivek
 """
@@ -24,7 +29,7 @@ from torch.utils.data import Dataset
 
 from .prepare_fivek import DATA_DIR, MATCHES_FILE
 
-TRAIN_LAST = 4500  # a0001 ... a4500 are for training, a4501 ... a5000 for testing
+SPLITS = {"train": (1, 4000), "val": (4001, 4500), "test": (4501, 5000)}  # first and last photo number
 
 # Pairs whose before and after don't line up are left out (see
 # prepare_fivek.match_score). Mixed-up pairs score about 0 to 0.1. Real pairs
@@ -47,15 +52,15 @@ def badly_matched(data_dir: Path) -> set[str]:
 
 
 def split_names(split: str, data_dir: Path = DATA_DIR) -> list[str]:
-    """The names of every photo pair in one split ("train" or "test")."""
-    if split not in ("train", "test"):
-        raise ValueError(f"split must be 'train' or 'test', not {split!r}")
+    """The names of every photo pair in one split ("train", "val" or "test")."""
+    if split not in SPLITS:
+        raise ValueError(f"split must be one of {list(SPLITS)}, not {split!r}")
     names = sorted(p.stem for p in (data_dir / "expertC").glob("*.jpg"))
     if not names:
         raise FileNotFoundError(f"No photos in {data_dir}. Run: python -m kelvin.data.prepare_fivek")
-    in_train = split == "train"
+    first, last = SPLITS[split]
     skip = badly_matched(data_dir)
-    return [n for n in names if (photo_number(n) <= TRAIN_LAST) == in_train and n not in skip]
+    return [n for n in names if first <= photo_number(n) <= last and n not in skip]
 
 
 class FiveK(Dataset):
@@ -72,8 +77,8 @@ class FiveK(Dataset):
         self.names = split_names(split, data_dir)
         self.size = size
         self.data_dir = data_dir
-        # Only training photos get flipped. Test photos must be identical
-        # every time, or scores from different days couldn't be compared.
+        # Only training photos get flipped. Validation and test photos must be
+        # identical every time, or scores from different days couldn't be compared.
         self.flip = split == "train"
 
     def __len__(self) -> int:

@@ -3,11 +3,13 @@
 Run it with:   python -m kelvin.eval.baselines
 (Needs the photos first:  python -m kelvin.data.prepare_fivek)
 
-The three methods
------------------
+The methods
+-----------
   nothing  Leave the photo alone. The floor: anything worse than this is
            making photos worse.
   auto     The rule-based Auto button from step 2. The score our AI must beat.
+  model    (with --model) the trained AI from kelvin.model.train. It only
+           sees the photo, never the answer.
   best     For each photo, search for the slider values that bring it closest
            to Expert C's edit, *while looking at the answer*. No real method
            can do that, so it's the ceiling: the best any slider-setting AI
@@ -18,6 +20,7 @@ Results go to data/results/baselines.csv, one row per photo per method, so
 the worst photos can be looked at later.
 """
 
+import argparse
 import csv
 from pathlib import Path
 
@@ -27,7 +30,7 @@ from torch.utils.data import DataLoader
 
 from kelvin.auto import suggest
 from kelvin.data import FiveK
-from kelvin.editor import SLIDER_NAMES, apply_edits
+from kelvin.editor import SLIDER_NAMES, apply_edits, as_params
 
 from .metrics import delta_e, psnr
 
@@ -38,11 +41,6 @@ BATCH = 50
 SEARCH_SIDE = 128  # slider values don't depend on photo size, so search on small copies: 4x faster
 SEARCH_STEPS = 200
 SEARCH_RATE = 0.05
-
-
-def as_params(values: torch.Tensor) -> dict:
-    """(batch, 10) slider values -> {"temp": (batch,), "tint": (batch,), ...}"""
-    return {name: values[:, i] for i, name in enumerate(SLIDER_NAMES)}
 
 
 def nothing(before: torch.Tensor, after: torch.Tensor) -> torch.Tensor:
@@ -91,14 +89,24 @@ def best_sliders(before: torch.Tensor, after: torch.Tensor) -> torch.Tensor:
 METHODS = {"nothing": nothing, "auto": auto, "best": best_sliders}
 
 
-def main() -> None:
+def trained_model(checkpoint: Path):
+    """The AI from kelvin.model.train, as a method: it only looks at `before`."""
+    from kelvin.model import SliderNet  # imported here: the other methods don't need torchvision
+
+    model = SliderNet(pretrained=False)  # the checkpoint replaces every weight anyway
+    model.load_state_dict(torch.load(checkpoint))
+    model.eval()
+    return lambda before, after: model(before)
+
+
+def main(methods: dict = METHODS) -> None:
     test = FiveK("test")
     loader = DataLoader(test, batch_size=BATCH, shuffle=False)
     rows = []
     for batch_number, (before, after) in enumerate(loader):
         names = test.names[batch_number * BATCH : (batch_number + 1) * BATCH]
         print(f"Photos {batch_number * BATCH + 1}-{batch_number * BATCH + len(before)} of {len(test)} ...", flush=True)
-        for method, choose in METHODS.items():
+        for method, choose in methods.items():
             with torch.set_grad_enabled(method == "best"):  # only the search needs gradients
                 values = choose(before, after)
             with torch.no_grad():
@@ -112,15 +120,15 @@ def main() -> None:
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
-    print_summary(rows)
+    print_summary(rows, list(methods))
 
 
-def print_summary(rows: list[dict]) -> None:
+def print_summary(rows: list[dict], methods: list[str]) -> None:
     by_photo = {(r["photo"], r["method"]): r for r in rows}
     photos = sorted({r["photo"] for r in rows})
     print(f"\nScores on {len(photos)} test photos (compared with Expert C's edits):\n")
     print(f"{'method':<10}{'PSNR (higher=better)':>22}{'Delta E (lower=better)':>24}{'better than nothing':>22}")
-    for method in METHODS:
+    for method in methods:
         mine = [by_photo[(p, method)] for p in photos]
         mean_psnr = sum(r["psnr"] for r in mine) / len(mine)
         mean_de = sum(r["delta_e"] for r in mine) / len(mine)
@@ -130,4 +138,12 @@ def print_summary(rows: list[dict]) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        "--model", nargs="?", const="checkpoints/slider_net.pt", help="also score the trained AI (default: %(const)s)"
+    )
+    args = parser.parse_args()
+    methods = dict(METHODS)
+    if args.model:  # listed before "best", so the table reads floor, baseline, AI, ceiling
+        methods = {"nothing": nothing, "auto": auto, "model": trained_model(Path(args.model)), "best": best_sliders}
+    main(methods)
