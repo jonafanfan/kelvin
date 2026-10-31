@@ -46,6 +46,8 @@ python -m pytest       # run the automatic checks
 ```
 
 ## The web app (runs in your browser, works offline)
+**Try it: https://kelvin.jonafan-fan.workers.dev**
+
 The [web/](web/) folder is Kelvin rebuilt to run entirely in the browser: the editor is translated to JavaScript, and the AI runs on your own device with ONNX Runtime Web. No server, no uploads, and once opened it works with no internet. You can install it as an app: **Add to Home Screen** on a phone, or the install icon in the address bar on a computer.
 
 You need [Node.js](https://nodejs.org) as well as Python.
@@ -55,9 +57,9 @@ python -m kelvin.model.export   # save the trained AI for the browser (web/publi
 cd web
 npm install                     # once
 npm run setup                   # copy the AI runtime into web/public/vendor
-npm run dev                     # try it at http://localhost:8788
+npm run dev                     # try it at the link it prints
 npx wrangler login              # once: log in to Cloudflare
-npm run deploy                  # put it online with Cloudflare Pages
+npm run deploy                  # put it online with Cloudflare (settings in web/wrangler.jsonc)
 ```
 
 ## Project layout
