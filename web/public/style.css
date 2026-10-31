@@ -178,7 +178,8 @@ input[type=range]::-moz-range-thumb {
 @media (max-width: 640px) {
   .k-header { flex-wrap: wrap; }
   .k-buttons { flex: 1 1 100%; gap: 8px; }
-  .k-buttons button { flex: 1 1 0; min-width: 0; padding: 0 6px; white-space: nowrap; }
+  .k-buttons button { flex: 1 1 0; min-width: 0; padding: 0 6px; white-space: nowrap; text-align: center; }
+  .k-wide { display: none; } /* "Open photo" -> "Open", "Reset all" -> "Reset": the full words don't fit */
   .k-reason { grid-template-columns: 1fr auto; }
   .k-reason span { grid-column: 1 / -1; }
 }
