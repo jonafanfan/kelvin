@@ -63,7 +63,11 @@ def auto(preview: np.ndarray | None):
     with torch.no_grad():
         s = ai_suggest(_to_tensor(preview), AI) if AI else suggest(_to_tensor(preview))
     values = [s.params[slider.name] for slider in SLIDERS]
-    rows = [(slider.label, s.params[slider.name], s.reasons[slider.name]) for slider in SLIDERS if slider.name in s.reasons]
+    rows = [
+        (slider.label, s.params[slider.name], s.reasons[slider.name], s.captions.get(slider.name, ""))
+        for slider in SLIDERS
+        if slider.name in s.reasons
+    ]
     panel = reasons_html(rows, AI_TITLE) if AI else reasons_html(rows, note=RULES_NOTE)
     return [*values, *render(preview, *values), panel]
 

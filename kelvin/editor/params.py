@@ -24,10 +24,10 @@ SLIDERS = [
     Slider("exposure", "Exposure", "Brightens or darkens the whole photo, like letting in more or less light."),
     Slider("contrast", "Contrast", "Pushes darks darker and brights brighter (+), or flattens them (-)."),
     Slider("highlights", "Highlights", "Changes only the bright parts. Turn down to recover a blown-out sky."),
-    Slider("shadows", "Shadows", "Changes only the dark parts. Turn up to see detail hiding in the dark."),
+    Slider("shadows", "Shadows", "Changes only the dark parts. Turn up to lift shadows and reveal detail."),
     Slider("whites", "Whites", "Moves the very brightest point of the photo."),
     Slider("blacks", "Blacks", "Moves the very darkest point of the photo."),
-    Slider("vibrance", "Vibrance", "Boosts dull colours more than already-bright ones. Gentle on skin."),
+    Slider("vibrance", "Vibrance", "Boosts dull colours more than bright ones."),
     Slider("saturation", "Saturation", "Makes every colour stronger (+) or greyer (-)."),
 ]
 

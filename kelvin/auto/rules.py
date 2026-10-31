@@ -58,6 +58,7 @@ MAX_VIBRANCE = 0.3
 class Suggestion:
     params: dict  # slider name -> value from -1 to 1 (every slider is present)
     reasons: dict = field(default_factory=dict)  # slider name -> one-line reason
+    captions: dict = field(default_factory=dict)  # slider name -> small line under the reason (AI only)
 
 
 def suggest(img: torch.Tensor) -> Suggestion:
