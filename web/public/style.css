@@ -57,6 +57,10 @@ button:disabled { opacity: 0.45; cursor: default; }
 /* The first thing you see is the welcome screen: logo, name, caption and one button */
 .k-welcome { min-height: 88vh; min-height: 88dvh; display: flex; flex-direction: column; align-items: center;
              justify-content: center; text-align: center; gap: 4px; border-radius: 20px; }
+/* The accent line along the bottom of the screen: the logo dot's blue-to-orange
+   fade (the AI's colour meeting yours), stretched across the page */
+.k-welcome::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 3px;
+                    background: linear-gradient(90deg, var(--daylight), #C084C8, var(--tungsten)); }
 .k-welcome h1 { margin: 18px 0 0; font-size: 56px; line-height: 1; }
 .k-caption { margin: 10px 0 32px; font-size: 17px; color: var(--text-soft); }
 .k-welcome .k-small { margin-top: 16px; max-width: 30em; }
