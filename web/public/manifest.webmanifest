@@ -1,0 +1,11 @@
+{
+  "name": "Kelvin",
+  "short_name": "Kelvin",
+  "description": "An AI photo editor that edits like a person.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0E0E0F",
+  "theme_color": "#0E0E0F",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}

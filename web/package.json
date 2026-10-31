@@ -1,0 +1,17 @@
+{
+  "name": "kelvin-web",
+  "private": true,
+  "description": "Kelvin as a web app that runs entirely in the browser",
+  "type": "module",
+  "scripts": {
+    "setup": "node copy-vendor.mjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "onnxruntime-web": "1.31.1"
+  },
+  "devDependencies": {
+    "wrangler": "4.156.0"
+  }
+}

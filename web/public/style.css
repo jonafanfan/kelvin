@@ -1,0 +1,188 @@
+/* Kelvin's look: the "Darkroom" design system (kelvin/ui/tokens.py).
+   The colours below must match tokens.py; tests/test_web.py checks they do.
+   Rule 1: neutral greys only, so the interface never tints how you judge colour.
+   Rule 2: orange (Tungsten) = a change YOU made, blue (Daylight) = the AI's. */
+:root {
+  --ink: #0E0E0F;
+  --surface: #18181A;
+  --raised: #222225;
+  --line: #2E2E33;
+  --divider: #26262A;
+  --tick: #4A4A52;
+  --button-border: #3A3A40;
+  --muted: #9A9AA0;
+  --text-soft: #B8B8BE;
+  --text: #EDEDED;
+  --tungsten: #FF7A2E;
+  --tungsten-text: #FF9A57;
+  --daylight: #5B8CFF;
+  --daylight-text: #8DB0FF;
+  --hist-red: #E8636B;
+  --hist-green: #4FBF7F;
+  --hist-blue: #6C8CFF;
+  --kelvin-scale: linear-gradient(90deg, #4D7CFF 0%, #8DB4FF 16%, #CFE0FF 32%, #F3EEE6 48%, #FFC489 64%, #FF8A3D 82%, #FF5A12 100%);
+  --font-display: "Bricolage Grotesque", "Helvetica Neue", sans-serif;
+  --font-ui: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto; max-width: 1440px; padding: 16px max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left));
+  background: var(--ink); color: var(--text); font: 14px/1.4 var(--font-ui);
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+
+/* Header: logo, wordmark, file name, buttons */
+.k-header { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            border-bottom: 1px solid var(--divider); padding-bottom: 14px; margin-bottom: 16px; }
+.k-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.k-brand svg { flex-shrink: 0; }
+.k-wordmark { font: 700 26px var(--font-display); letter-spacing: -0.04em; }
+.k-filename { font: 13px var(--font-mono); color: var(--muted); margin-left: 8px;
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-buttons { display: flex; gap: 10px; }
+button {
+  min-height: 44px; padding: 0 18px; border-radius: 10px; font: 500 14px var(--font-ui); color: var(--text);
+  background: transparent; border: 1px solid var(--button-border); cursor: pointer;
+}
+button:hover:not(:disabled) { background: var(--raised); }
+button:disabled { opacity: 0.45; cursor: default; }
+/* Auto: Daylight blue, because it's the AI's button */
+.k-auto { background: var(--daylight); border-color: var(--daylight); color: #08112A; }
+.k-auto:hover:not(:disabled) { background: var(--daylight-text); }
+
+/* The first thing you see is the welcome screen: logo, name, caption and one button */
+.k-welcome { min-height: 88vh; min-height: 88dvh; display: flex; flex-direction: column; align-items: center;
+             justify-content: center; text-align: center; gap: 4px; border-radius: 20px; }
+/* The accent line along the bottom of the screen: the logo dot's blue-to-orange
+   fade (the AI's colour meeting yours), stretched across the page */
+.k-welcome::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 3px;
+                    background: linear-gradient(90deg, var(--daylight), #C084C8, var(--tungsten)); }
+.k-welcome h1 { margin: 18px 0 0; font-size: 56px; line-height: 1; }
+.k-caption { margin: 10px 0 32px; font-size: 17px; color: var(--text-soft); }
+.k-welcome .k-small { margin-top: 16px; max-width: 30em; }
+.k-primary { min-height: 52px; padding: 0 32px; font-size: 16px; border-color: var(--text); background: var(--text); color: var(--ink); }
+.k-primary:hover:not(:disabled) { background: var(--text-soft); }
+
+/* Auto pulses a few times when a photo opens, as a hint to tap it.
+   A soft blue ring grows out of the button and fades. */
+.k-pulse { animation: k-pulse 1.6s ease-out 4; }
+@keyframes k-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(91, 140, 255, 0.7); }
+  70%, 100% { box-shadow: 0 0 0 14px rgba(91, 140, 255, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .k-pulse { animation: none; } }
+
+/* Two columns: sliders on the left, photo, histogram and reasons on the right */
+.k-main { display: grid; grid-template-columns: minmax(320px, 1fr) 2fr; gap: 16px; align-items: start; }
+.k-view { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* Slider panel */
+.k-sliders { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 22px 12px; }
+.k-slider { padding: 12px 0; border-bottom: 1px solid #232327; }
+.k-slider:last-child { border-bottom: 0; }
+.k-slider-top { display: flex; justify-content: space-between; align-items: baseline; }
+.k-slider label { font-weight: 500; }
+.k-slider output { font: 14px var(--font-mono); color: var(--tungsten-text); }
+.k-slider.by-ai output { color: var(--daylight-text); }
+.k-slider p { margin: 2px 0 8px; color: var(--muted); font-size: 12.5px; }
+
+/* Slider track: grey line, a centre tick, and a fill from the middle to the
+   thumb. --from and --to are set by app.js; the fill is orange when you moved
+   the slider and blue when the AI did. */
+input[type=range] {
+  --from: 50%; --to: 50%; --fill: var(--tungsten);
+  -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0;
+  background: transparent; cursor: pointer; touch-action: pan-y;
+}
+.k-slider.by-ai input[type=range] { --fill: var(--daylight); }
+input[type=range]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background:
+    linear-gradient(var(--tick), var(--tick)) 50% 50% / 2px 10px no-repeat,
+    linear-gradient(to right, var(--line) var(--from), var(--fill) var(--from), var(--fill) var(--to), var(--line) var(--to));
+}
+input[type=range]::-moz-range-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--line) var(--from), var(--fill) var(--from), var(--fill) var(--to), var(--line) var(--to));
+}
+/* Thumb: light circle with a dark ring, so it shows on any track colour */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%;
+  background: var(--text); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--tick);
+}
+input[type=range]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--text); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--tick);
+}
+/* Warmth: the kelvin scale replaces the fill, because the track itself shows the colour */
+#slider-temp::-webkit-slider-runnable-track { height: 6px; background: var(--kelvin-scale); }
+#slider-temp::-moz-range-track { height: 6px; background: var(--kelvin-scale); }
+#slider-temp::-webkit-slider-thumb { margin-top: -6px; }
+
+/* Photo: before/after with a line you drag to compare */
+.k-photo {
+  background: var(--raised); border: 1px solid var(--line); border-radius: 14px;
+  min-height: 320px; display: grid; place-items: center; padding: 12px; overflow: hidden;
+}
+.dragging .k-photo, .dragging .k-welcome { outline: 2px dashed var(--daylight); outline-offset: -12px; }
+.k-small { font-size: 12.5px; color: var(--muted); }
+.k-compare { position: relative; max-width: 100%; line-height: 0; touch-action: none; cursor: ew-resize; user-select: none; }
+.k-compare canvas { display: block; max-width: 100%; max-height: 72vh; border-radius: 6px; }
+.k-compare #before { position: absolute; inset: 0; width: 100%; height: 100%;
+                     clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
+.k-divider { position: absolute; top: 0; bottom: 0; left: var(--split, 50%); width: 2px; margin-left: -1px;
+             background: var(--text); pointer-events: none; }
+.k-divider span { position: absolute; top: 50%; left: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px;
+                  border-radius: 50%; background: var(--text); box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
+.k-divider span::before { content: "‹ ›"; position: absolute; inset: 0; display: grid; place-items: center;
+                          color: var(--ink); font: 700 13px/1 var(--font-ui); letter-spacing: 2px; }
+.k-tag { position: absolute; top: 8px; padding: 3px 8px; border-radius: 6px; font-size: 12px; line-height: 1.4;
+         background: rgba(14, 14, 15, 0.7); color: var(--text-soft); pointer-events: none; }
+.k-tag-before { left: 8px; }
+.k-tag-after { right: 8px; }
+
+/* Histogram */
+.k-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px 8px; }
+.k-histogram canvas { display: block; width: 100%; height: 170px; }
+
+/* "What the AI changed": one row per slider it moved */
+.k-reasons { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--daylight);
+             border-radius: 14px; padding: 14px 18px; }
+.k-reasons h3 { margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.k-reasons p { margin: 0; color: var(--muted); font-size: 14px; }
+.k-reason { display: grid; grid-template-columns: 7.5em 3.5em 1fr; gap: 10px; padding: 6px 0;
+            border-top: 1px solid #232327; font-size: 14px; color: var(--text-soft); }
+.k-reason b { color: var(--text); font-weight: 500; }
+.k-reason code { font-family: var(--font-mono); color: var(--daylight-text); text-align: right; }
+
+/* Phones and narrow windows: one column, with the photo first and pinned to
+   the top of the screen while the sliders scroll underneath, like a phone
+   editing app. "display: contents" makes the right-hand column's own box
+   disappear, so "order" can rearrange the photo, sliders, histogram and reasons. */
+@media (max-width: 900px) {
+  .k-main { display: flex; flex-direction: column; align-items: stretch; }
+  .k-view { display: contents; }
+  .k-photo { order: 0; position: sticky; top: 0; z-index: 10; min-height: 200px;
+             box-shadow: 0 12px 16px -8px var(--ink); }
+  .k-compare canvas { max-height: 36vh; }
+  .k-sliders { order: 1; }
+  .k-histogram { order: 2; }
+  .k-reasons { order: 3; }
+}
+
+/* Phones: logo on one line, the buttons side by side underneath */
+@media (max-width: 640px) {
+  .k-header { flex-wrap: wrap; }
+  .k-buttons { flex: 1 1 100%; gap: 8px; }
+  .k-buttons button { flex: 1 1 0; min-width: 0; padding: 0 6px; white-space: nowrap; text-align: center; }
+  .k-wide { display: none; } /* "Open photo" -> "Open", "Reset all" -> "Reset": the full words don't fit */
+  .k-reason { grid-template-columns: 1fr auto; }
+  .k-reason span { grid-column: 1 / -1; }
+}
+
+/* Touch screens can't drag a file onto the page, so don't suggest it */
+@media (hover: none) { .k-drop-hint { display: none; } }

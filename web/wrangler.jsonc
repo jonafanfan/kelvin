@@ -1,0 +1,7 @@
+// Cloudflare settings: Kelvin is a set of plain files (public/), served as
+// "static assets" by Cloudflare Workers. No code runs on Cloudflare's side.
+{
+  "name": "kelvin",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./public" }
+}
