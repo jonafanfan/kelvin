@@ -143,7 +143,6 @@ footer {{ display: none !important; }}
 .k-reasons p.k-note {{ margin-top: 8px; font-size: 12px; }}
 .k-reason {{ display: grid; grid-template-columns: 7.5em 3.5em 1fr; gap: 10px; padding: 6px 0;
              border-top: 1px solid #232327; font-size: 14px; color: {t.TEXT_SOFT}; }}
-.k-reason small {{ display: block; margin-top: 2px; font-size: 12px; color: {t.MUTED}; }}
 .k-reason b {{ color: {t.TEXT}; font-weight: 500; }}
 .k-reason code {{ font-family: '{t.FONT_MONO}', ui-monospace, monospace; color: {t.DAYLIGHT_TEXT};
                   background: none; text-align: right; }}
@@ -200,9 +199,8 @@ def header_html(filename: str | None = None) -> str:
 
 
 def reasons_html(rows: list[tuple[str, float, str]] | None = None, title: str = "Why Auto did that", note: str = "") -> str:
-    """The "why" panel. `rows` is (slider label, value, reason, caption) for each
-    slider Auto moved, where the caption is a small line under the reason ("" for
-    none); None means Auto hasn't run yet, [] means it found nothing to fix.
+    """The "why" panel. `rows` is (slider label, value, reason) for each slider
+    Auto moved; None means Auto hasn't run yet, [] means it found nothing to fix.
     `note` is an optional line under the reasons."""
     if rows is None:
         body = "<p>Press <b>Auto</b> and Kelvin will set the sliders, and explain each change here.</p>"
@@ -210,10 +208,8 @@ def reasons_html(rows: list[tuple[str, float, str]] | None = None, title: str = 
         body = "<p>Nothing needed fixing: this photo already looks balanced.</p>"
     else:
         body = "".join(
-            f'<div class="k-reason"><b>{label}</b><code>{value:+.2f}</code><span>{html.escape(reason)}'
-            + (f"<small>{html.escape(caption)}</small>" if caption else "")
-            + "</span></div>"
-            for label, value, reason, caption in rows
+            f'<div class="k-reason"><b>{label}</b><code>{value:+.2f}</code><span>{html.escape(reason)}</span></div>'
+            for label, value, reason in rows
         )
     if note:
         body += f'<p class="k-note">{html.escape(note)}</p>'
