@@ -1,7 +1,7 @@
-// Cloudflare settings: Kelvin is a set of plain files (public/), served as
-// "static assets" by Cloudflare Workers. No code runs on Cloudflare's side.
+// Cloudflare settings: Kelvin is a set of plain files (public/), hosted on
+// Cloudflare Pages at https://kelvin-ai.pages.dev. No code runs on Cloudflare's side.
 {
-  "name": "kelvin",
+  "name": "kelvin-ai",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./public" }
+  "pages_build_output_dir": "./public"
 }

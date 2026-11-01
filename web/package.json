@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "setup": "node copy-vendor.mjs",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "dev": "wrangler pages dev",
+    "deploy": "wrangler pages deploy --branch main"
   },
   "dependencies": {
     "onnxruntime-web": "1.31.1"
