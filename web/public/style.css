@@ -159,6 +159,21 @@ input[type=range]::-moz-range-thumb {
 .k-reason b { color: var(--text); font-weight: 500; }
 .k-reason code { font-family: var(--font-mono); color: var(--daylight-text); text-align: right; }
 
+/* "How did we do?": optional feedback under the reasons */
+.k-feedback { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
+.k-feedback-question { margin: 0 0 10px; color: var(--text-soft); }
+.k-rating { display: flex; gap: 8px; flex-wrap: wrap; }
+.k-rating button { min-height: 38px; padding: 0 16px; }
+.k-rating button[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--ink); }
+.k-feedback-note { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.k-link { min-height: 0; padding: 0; border: 0; background: none; color: var(--text); text-decoration: underline;
+          text-underline-offset: 3px; font-size: 13px; }
+.k-link:hover:not(:disabled) { background: none; color: var(--text-soft); }
+#feedback-more { margin-top: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+#feedback-more textarea { width: 100%; resize: vertical; padding: 10px 12px; border-radius: 10px; font: 14px/1.4 var(--font-ui);
+                          color: var(--text); background: var(--raised); border: 1px solid var(--line); }
+#feedback-more textarea:focus { outline: none; border-color: var(--text-soft); }
+
 /* Phones and narrow windows: one column, with the photo first and pinned to
    the top of the screen while the sliders scroll underneath, like a phone
    editing app. "display: contents" makes the right-hand column's own box
@@ -172,6 +187,7 @@ input[type=range]::-moz-range-thumb {
   .k-sliders { order: 1; }
   .k-histogram { order: 2; }
   .k-reasons { order: 3; }
+  .k-feedback { order: 4; }
 }
 
 /* Phones: logo on one line, the buttons side by side underneath */

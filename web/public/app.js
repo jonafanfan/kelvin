@@ -149,6 +149,7 @@ async function openPhoto(file) {
   $("compare").hidden = false;
   // Pulse the Auto button a few times, to invite a first tap
   $("auto").classList.add("k-pulse");
+  $("feedback").hidden = true; // a new photo: feedback only makes sense once Auto has run on it
   for (const id of ["auto", "reset", "save"]) $(id).disabled = false;
   for (const input of document.querySelectorAll("input[type=range]")) input.disabled = false;
   reset();
@@ -190,6 +191,7 @@ $("auto").addEventListener("click", async () => {
     const { params, reasons } = await aiSuggest(state.photo);
     for (const s of SLIDERS) setSlider(s.name, params[s.name], params[s.name] ? "ai" : "you");
     showReasons(SLIDERS.filter((s) => s.name in reasons).map((s) => [s.label, params[s.name], reasons[s.name]]));
+    askForFeedback(params);
     render();
   } catch (error) {
     console.error(error);
@@ -197,6 +199,71 @@ $("auto").addEventListener("click", async () => {
   } finally {
     button.disabled = false;
     button.textContent = "Auto";
+  }
+});
+
+// ---------------------------------------------------------------------------
+// "How did we do?": optional feedback after Auto. Picking a rating sends it
+// straight away; "Tell us more" adds a comment to the same answer. Only the
+// rating, the comment and the slider values are sent: never the photo.
+// See functions/api/feedback.js for where it's saved.
+// ---------------------------------------------------------------------------
+
+const feedback = { token: null, rating: null, aiSliders: null };
+
+function askForFeedback(aiSliders) {
+  Object.assign(feedback, { token: null, rating: null, aiSliders: { ...aiSliders } });
+  for (const b of document.querySelectorAll(".k-rating button")) b.setAttribute("aria-pressed", "false");
+  $("feedback-note").hidden = true;
+  $("feedback-more").hidden = true;
+  $("feedback-comment").value = "";
+  $("feedback").hidden = false;
+}
+
+async function sendFeedback(extra) {
+  const response = await fetch("api/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: feedback.token, rating: feedback.rating, ...extra }),
+  });
+  if (!response.ok) throw new Error(`Feedback failed: ${response.status}`);
+  feedback.token = (await response.json()).token;
+}
+
+function note(html) {
+  $("feedback-note").innerHTML = html;
+  $("feedback-note").hidden = false;
+  $("feedback-more-link")?.addEventListener("click", () => {
+    $("feedback-more").hidden = false;
+    $("feedback-comment").focus();
+    $("feedback-note").hidden = true;
+  });
+}
+
+for (const button of document.querySelectorAll(".k-rating button")) {
+  button.addEventListener("click", async () => {
+    feedback.rating = button.dataset.rating;
+    for (const b of document.querySelectorAll(".k-rating button")) b.setAttribute("aria-pressed", String(b === button));
+    try {
+      // The first answer also sends the sliders: the AI's choice, and where they are now
+      await sendFeedback(feedback.token ? {} : { aiSliders: feedback.aiSliders, finalSliders: state.values });
+      if ($("feedback-more").hidden) note('Thanks! <button type="button" class="k-link" id="feedback-more-link">Tell us more</button>');
+    } catch {
+      note("Couldn't send that. Check your connection and try again.");
+    }
+  });
+}
+
+$("feedback-more").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const comment = $("feedback-comment").value.trim();
+  if (!comment) return;
+  try {
+    await sendFeedback({ comment });
+    $("feedback-more").hidden = true;
+    note("Thanks, that really helps.");
+  } catch {
+    note("Couldn't send that. Check your connection and try again.");
   }
 });
 

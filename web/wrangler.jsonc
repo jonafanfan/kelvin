@@ -1,7 +1,12 @@
 // Cloudflare settings: Kelvin is a set of plain files (public/), hosted on
-// Cloudflare Pages at https://kelvin-ai.pages.dev. No code runs on Cloudflare's side.
+// Cloudflare Pages at https://kelvin-ai.pages.dev. The only code that runs on
+// Cloudflare's side is functions/api/feedback.js, which saves feedback.
 {
   "name": "kelvin-ai",
   "compatibility_date": "2026-10-01",
-  "pages_build_output_dir": "./public"
+  "pages_build_output_dir": "./public",
+  // A small database for the "How did we do?" feedback (see schema.sql)
+  "d1_databases": [
+    { "binding": "DB", "database_name": "kelvin-feedback", "database_id": "dd5d846c-0a12-4100-8e13-0f5b392a68b2" }
+  ]
 }

@@ -6,7 +6,9 @@
   "scripts": {
     "setup": "node copy-vendor.mjs",
     "dev": "wrangler pages dev",
-    "deploy": "wrangler pages deploy --branch main"
+    "deploy": "wrangler pages deploy --branch main",
+    "setup-db": "wrangler d1 execute kelvin-feedback --remote --file schema.sql",
+    "feedback": "wrangler d1 execute kelvin-feedback --remote --command \"SELECT id, created_at, rating, comment FROM feedback ORDER BY id DESC LIMIT 50\""
   },
   "dependencies": {
     "onnxruntime-web": "1.31.1"
