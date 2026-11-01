@@ -60,6 +60,7 @@ npm run setup                   # copy the AI runtime into web/public/vendor
 npm run dev                     # try it at the link it prints
 npx wrangler login              # once: log in to Cloudflare
 npm run deploy                  # put it online with Cloudflare Pages (settings in web/wrangler.jsonc)
+npm run feedback                # read the latest "How did we do?" answers
 ```
 
 ## Project layout
