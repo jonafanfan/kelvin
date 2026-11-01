@@ -149,7 +149,7 @@ async function openPhoto(file) {
   $("compare").hidden = false;
   // Pulse the Auto button a few times, to invite a first tap
   $("auto").classList.add("k-pulse");
-  $("feedback").hidden = true; // a new photo: feedback only makes sense once Auto has run on it
+  closeFeedback(); // a new photo: feedback only makes sense once Auto has run on it
   for (const id of ["auto", "reset", "save"]) $(id).disabled = false;
   for (const input of document.querySelectorAll("input[type=range]")) input.disabled = false;
   reset();
@@ -209,16 +209,31 @@ $("auto").addEventListener("click", async () => {
 // See functions/api/feedback.js for where it's saved.
 // ---------------------------------------------------------------------------
 
-const feedback = { token: null, rating: null, aiSliders: null };
+const FEEDBACK_DELAY = 3000; // ms after Auto: time to look at the result first
+const feedback = { token: null, rating: null, aiSliders: null, askedFor: null, timer: null };
 
 function askForFeedback(aiSliders) {
+  if (feedback.askedFor === state.photo) return; // once per photo, so pressing Auto again doesn't nag
+  feedback.askedFor = state.photo;
   Object.assign(feedback, { token: null, rating: null, aiSliders: { ...aiSliders } });
   for (const b of document.querySelectorAll(".k-rating button")) b.setAttribute("aria-pressed", "false");
   $("feedback-note").hidden = true;
   $("feedback-more").hidden = true;
   $("feedback-comment").value = "";
-  $("feedback").hidden = false;
+  feedback.timer = setTimeout(() => {
+    $("feedback").hidden = false;
+    requestAnimationFrame(() => $("feedback").classList.add("k-show")); // slide up into view
+  }, FEEDBACK_DELAY);
 }
+
+function closeFeedback() {
+  clearTimeout(feedback.timer);
+  $("feedback").classList.remove("k-show");
+  $("feedback").hidden = true;
+}
+
+$("feedback-close").addEventListener("click", closeFeedback);
+addEventListener("keydown", (e) => e.key === "Escape" && closeFeedback());
 
 async function sendFeedback(extra) {
   const response = await fetch("api/feedback", {
@@ -262,6 +277,7 @@ $("feedback-more").addEventListener("submit", async (e) => {
     await sendFeedback({ comment });
     $("feedback-more").hidden = true;
     note("Thanks, that really helps.");
+    feedback.timer = setTimeout(closeFeedback, 2500); // done: tidy it away
   } catch {
     note("Couldn't send that. Check your connection and try again.");
   }

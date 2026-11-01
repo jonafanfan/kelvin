@@ -86,22 +86,23 @@
         <canvas id="histogram" aria-label="Histogram"></canvas>
       </div>
       <div class="k-reasons" id="reasons"></div>
-      <!-- Optional feedback, shown after Auto: a quick rating, then more if they want -->
-      <div class="k-feedback" id="feedback" hidden>
-        <p class="k-feedback-question">How did we do on this photo?</p>
-        <div class="k-rating" role="group" aria-label="Rating">
-          <button data-rating="great" aria-pressed="false">Great</button>
-          <button data-rating="okay" aria-pressed="false">Okay</button>
-          <button data-rating="bad" aria-pressed="false">Not great</button>
-        </div>
-        <p class="k-feedback-note" id="feedback-note" hidden></p>
-        <form id="feedback-more" hidden>
-          <textarea id="feedback-comment" rows="3" maxlength="2000" placeholder="What's good or bad about Kelvin? What did it get wrong, or what would you like it to do?"></textarea>
-          <button type="submit">Send</button>
-        </form>
-      </div>
     </div>
   </main>
+  <!-- Optional feedback: pops up a few seconds after Auto. A quick rating, then more if they want -->
+  <div class="k-feedback" id="feedback" role="dialog" aria-label="Feedback" hidden>
+    <button type="button" class="k-close" id="feedback-close" aria-label="Close">×</button>
+    <p class="k-feedback-question">How did we do on this photo?</p>
+    <div class="k-rating" role="group" aria-label="Rating">
+      <button data-rating="great" aria-pressed="false">Great</button>
+      <button data-rating="okay" aria-pressed="false">Okay</button>
+      <button data-rating="bad" aria-pressed="false">Not great</button>
+    </div>
+    <p class="k-feedback-note" id="feedback-note" hidden></p>
+    <form id="feedback-more" hidden>
+      <textarea id="feedback-comment" rows="3" maxlength="2000" placeholder="What's good or bad about Kelvin? What did it get wrong, or what would you like it to do?"></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </div>
   </div>
 </body>
 </html>
