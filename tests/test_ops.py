@@ -35,6 +35,15 @@ def test_exposure_up_brightens(photo):
     assert apply_edits(photo, {"exposure": 0.5}).mean() > photo.mean()
 
 
+def test_brightening_keeps_detail_in_bright_parts():
+    """Two different light greys must still differ after a big brighten,
+    not both be cut to pure white (the burnt-out clouds problem)."""
+    clouds = torch.tensor([0.80, 0.90]).reshape(1, 1, 2, 1).expand(1, 3, 2, 1)
+    edited = apply_edits(clouds, {"exposure": 1.0})
+    assert edited.max() < 1
+    assert edited[0, 0, 1, 0] - edited[0, 0, 0, 0] > 0.01
+
+
 def test_warmth_up_makes_photo_more_orange(photo):
     edited = apply_edits(photo, {"temp": 0.5})
     assert edited[0].mean() > photo[0].mean()  # more red

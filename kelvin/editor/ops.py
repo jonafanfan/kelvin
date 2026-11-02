@@ -88,6 +88,20 @@ def exposure(linear: torch.Tensor, amount) -> torch.Tensor:
     return linear * 2 ** (EXPOSURE_STOPS * _amount(amount, linear))
 
 
+def roll_off(original: torch.Tensor, brightened: torch.Tensor) -> torch.Tensor:
+    """Brighten without burning out the bright parts.
+
+    Doubling the light makes a cloud at 0.6 come out at 1.2, past pure white,
+    and everything past white gets cut to white: the cloud's detail is gone
+    for good. So where a colour got brighter, we bend the result instead:
+        new = brightened / (1 + brightened - original)
+    Dark parts get almost the full brightening, bright parts less and less,
+    and only what was already pure white ends up pure white. Darkening is
+    left alone. Lightroom and phone cameras do much the same ("highlight
+    roll-off"). `original` and `brightened` are linear light, 0 to 1 and up."""
+    return torch.where(brightened > original, brightened / (1 + brightened - original), brightened)
+
+
 def contrast(img: torch.Tensor, amount) -> torch.Tensor:
     """An S-shaped curve: pixels darker than middle grey get darker, brighter
     ones get brighter. Pure black (0) and pure white (1) never move."""
@@ -148,13 +162,11 @@ def apply_edits(img: torch.Tensor, params: dict) -> torch.Tensor:
     x = _as_batch(img)
 
     # 1. Light-based edits, done on linear light (see srgb_to_linear).
-    x = srgb_to_linear(x)
-    x = white_balance(x, p["temp"], p["tint"])
-    x = exposure(x, p["exposure"])
+    linear = srgb_to_linear(x)
+    x = roll_off(linear, exposure(white_balance(linear, p["temp"], p["tint"]), p["exposure"]))
     x = linear_to_srgb(x)
-    # Anything pushed brighter than pure white is cut off here. The steps below
-    # assume values between 0 and 1. (Real editors keep extra headroom so
-    # highlights can be pulled back down; that's a possible future improvement.)
+    # roll_off keeps everything at or below pure white; the clamp only tidies
+    # tiny rounding errors. The steps below assume values between 0 and 1.
     x = x.clamp(0, 1)
 
     # 2. Tone edits: decide how bright or dark each part of the photo is.
