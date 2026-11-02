@@ -118,6 +118,14 @@ input[type=range]::-moz-range-thumb {
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--text); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--tick);
 }
+/* Auto strength: blue (it controls the AI), filling from the left, since it
+   goes from 0% to 100% rather than from -1 to +1. Set apart from the sliders below. */
+.k-strength { border-bottom: 2px solid var(--line); }
+#strength::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, var(--daylight) var(--to), var(--line) var(--to));
+}
+#strength::-moz-range-track { background: linear-gradient(to right, var(--daylight) var(--to), var(--line) var(--to)); }
+
 /* Warmth: the kelvin scale replaces the fill, because the track itself shows the colour */
 #slider-temp::-webkit-slider-runnable-track { height: 6px; background: var(--kelvin-scale); }
 #slider-temp::-moz-range-track { height: 6px; background: var(--kelvin-scale); }

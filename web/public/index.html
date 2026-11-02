@@ -70,7 +70,14 @@
   </header>
 
   <main class="k-main">
-    <section class="k-sliders" id="sliders" aria-label="Sliders"></section>
+    <section class="k-sliders" id="sliders" aria-label="Sliders">
+      <!-- Shown once Auto has run: how much of the AI's edit to use -->
+      <div class="k-slider k-strength by-ai" id="strength-row" hidden>
+        <div class="k-slider-top"><label for="strength">Auto strength</label><output id="strength-value">70%</output></div>
+        <p>How much of the AI's edit to use. Turn it down to keep more of the photo's own mood.</p>
+        <input type="range" id="strength" min="0" max="1" step="0.05" value="0.7">
+      </div>
+    </section>
 
     <div class="k-view">
       <div class="k-photo" id="photo">
