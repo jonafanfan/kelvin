@@ -159,9 +159,22 @@ input[type=range]::-moz-range-thumb {
 .k-reason b { color: var(--text); font-weight: 500; }
 .k-reason code { font-family: var(--font-mono); color: var(--daylight-text); text-align: right; }
 
-/* "How did we do?": optional feedback under the reasons */
-.k-feedback { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
-.k-feedback-question { margin: 0 0 10px; color: var(--text-soft); }
+/* "How did we do?": optional feedback that floats in the bottom corner a few
+   seconds after Auto. It sits over the page without blocking it, so you can
+   keep editing, and slides up into view (app.js adds .k-show). */
+.k-feedback {
+  position: fixed; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 50;
+  width: min(380px, calc(100vw - 32px)); padding: 16px 18px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  opacity: 0; transform: translateY(16px); transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+.k-feedback.k-show { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .k-feedback { transition: none; } }
+.k-close { position: absolute; top: 6px; right: 6px; min-height: 0; width: 32px; height: 32px; padding: 0;
+           border: 0; border-radius: 8px; font-size: 22px; line-height: 1; color: var(--muted); }
+.k-close:hover:not(:disabled) { color: var(--text); }
+.k-feedback-question { margin: 0 32px 12px 0; font-weight: 500; }
 .k-rating { display: flex; gap: 8px; flex-wrap: wrap; }
 .k-rating button { min-height: 38px; padding: 0 16px; }
 .k-rating button[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--ink); }
@@ -187,7 +200,6 @@ input[type=range]::-moz-range-thumb {
   .k-sliders { order: 1; }
   .k-histogram { order: 2; }
   .k-reasons { order: 3; }
-  .k-feedback { order: 4; }
 }
 
 /* Phones: logo on one line, the buttons side by side underneath */
