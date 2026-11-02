@@ -52,6 +52,36 @@ function linearToSrgb(v) {
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
+// Speed-up: the two curves above use "**" (a power), which is slow, and the
+// editor needs six per pixel. So we work each curve out once, at 65,536
+// evenly spaced points from 0 to 1, and look answers up, blending the two
+// nearest points. That's as exact as the real maths to about 0.0000001 (the
+// Python-match test checks), and several times faster.
+const TABLE_SIZE = 65536;
+function makeTable(curve) {
+  const table = new Float32Array(TABLE_SIZE + 1);
+  for (let i = 0; i <= TABLE_SIZE; i++) table[i] = curve(i / TABLE_SIZE);
+  return table;
+}
+const TO_LINEAR = makeTable(srgbToLinear);
+const TO_SRGB = makeTable(linearToSrgb);
+// Looks up v (from 0 to 1) in a table. Anything above 1 counts as 1, which
+// is fine: the editor clips to 1 straight afterwards anyway.
+function lookUp(table, v) {
+  if (v <= 0) return table[0];
+  if (v >= 1) return table[TABLE_SIZE];
+  const at = v * TABLE_SIZE;
+  const i = at | 0;
+  return table[i] + (table[i + 1] - table[i]) * (at - i);
+}
+
+// Multiply the light by `gain`, but roll off the bright parts instead of
+// cutting them at pure white, so clouds keep their detail (roll_off in ops.py).
+function brighten(v, gain) {
+  const out = v * gain;
+  return out > v ? out / (1 + out - v) : out;
+}
+
 // Apply every slider, in the same order as apply_edits in ops.py, and return
 // a new edited photo. `params` maps slider name -> value from -1 to 1.
 export function applyEdits(pixels, params) {
@@ -71,9 +101,9 @@ export function applyEdits(pixels, params) {
 
   for (let i = 0; i < pixels.length; i += 3) {
     // 1. Light: white balance and exposure, on linear light.
-    let r = clamp01(linearToSrgb(srgbToLinear(pixels[i]) * gainR));
-    let g = clamp01(linearToSrgb(srgbToLinear(pixels[i + 1]) * gainG));
-    let b = clamp01(linearToSrgb(srgbToLinear(pixels[i + 2]) * gainB));
+    let r = clamp01(lookUp(TO_SRGB, brighten(lookUp(TO_LINEAR, pixels[i]), gainR)));
+    let g = clamp01(lookUp(TO_SRGB, brighten(lookUp(TO_LINEAR, pixels[i + 1]), gainG)));
+    let b = clamp01(lookUp(TO_SRGB, brighten(lookUp(TO_LINEAR, pixels[i + 2]), gainB)));
 
     // 2. Tone. Contrast: an S-shaped curve around middle grey.
     r += contrast * (r - 0.5) * r * (1 - r);
@@ -82,8 +112,9 @@ export function applyEdits(pixels, params) {
 
     // Highlights and shadows: masks that pick out the bright or dark parts.
     const lum = luminance(r, g, b);
-    const shadowMask = 6.75 * lum * (1 - lum) ** 2;
-    const highlightMask = 6.75 * lum ** 2 * (1 - lum);
+    const dark = 1 - lum;
+    const shadowMask = 6.75 * lum * dark * dark;
+    const highlightMask = 6.75 * lum * lum * dark;
     const change = TONE_STRENGTH * (p.shadows * shadowMask + p.highlights * highlightMask);
     r += change;
     g += change;
