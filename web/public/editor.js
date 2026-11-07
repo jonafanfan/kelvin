@@ -75,6 +75,13 @@ function lookUp(table, v) {
   return table[i] + (table[i + 1] - table[i]) * (at - i);
 }
 
+// Multiply the light by `gain`, but roll off the bright parts instead of
+// cutting them at pure white, so clouds keep their detail (roll_off in ops.py).
+function brighten(v, gain) {
+  const out = v * gain;
+  return out > v ? out / (1 + out - v) : out;
+}
+
 // Apply every slider, in the same order as apply_edits in ops.py, and return
 // a new edited photo. `params` maps slider name -> value from -1 to 1.
 export function applyEdits(pixels, params) {
@@ -94,9 +101,9 @@ export function applyEdits(pixels, params) {
 
   for (let i = 0; i < pixels.length; i += 3) {
     // 1. Light: white balance and exposure, on linear light.
-    let r = clamp01(lookUp(TO_SRGB, lookUp(TO_LINEAR, pixels[i]) * gainR));
-    let g = clamp01(lookUp(TO_SRGB, lookUp(TO_LINEAR, pixels[i + 1]) * gainG));
-    let b = clamp01(lookUp(TO_SRGB, lookUp(TO_LINEAR, pixels[i + 2]) * gainB));
+    let r = clamp01(lookUp(TO_SRGB, brighten(lookUp(TO_LINEAR, pixels[i]), gainR)));
+    let g = clamp01(lookUp(TO_SRGB, brighten(lookUp(TO_LINEAR, pixels[i + 1]), gainG)));
+    let b = clamp01(lookUp(TO_SRGB, brighten(lookUp(TO_LINEAR, pixels[i + 2]), gainB)));
 
     // 2. Tone. Contrast: an S-shaped curve around middle grey.
     r += contrast * (r - 0.5) * r * (1 - r);

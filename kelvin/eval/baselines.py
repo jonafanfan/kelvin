@@ -16,6 +16,9 @@ The methods
            could ever score. The gap between "best" and a perfect score is
            what our 10 sliders can't express (the expert had all of Lightroom).
 
+With --phone, the test photos are first made to look like phone photos
+(see kelvin/data/phone.py), the kind people actually open in the app.
+
 Results go to data/results/baselines.csv, one row per photo per method, so
 the worst photos can be looked at later.
 """
@@ -97,8 +100,8 @@ def trained_model(checkpoint: Path):
     return lambda before, after: model(before)
 
 
-def main(methods: dict = METHODS) -> None:
-    test = FiveK("test")
+def main(methods: dict = METHODS, phone: bool = False) -> None:
+    test = FiveK("test", phone=1.0 if phone else 0.0)
     loader = DataLoader(test, batch_size=BATCH, shuffle=False)
     rows = []
     for batch_number, (before, after) in enumerate(loader):
@@ -113,15 +116,16 @@ def main(methods: dict = METHODS) -> None:
             for name, (p, e), v in zip(names, scores, values.tolist()):
                 rows.append({"photo": name, "method": method, "psnr": p, "delta_e": e} | dict(zip(SLIDER_NAMES, v)))
 
-    RESULTS.parent.mkdir(parents=True, exist_ok=True)
-    with RESULTS.open("w", newline="") as f:
+    results = RESULTS.with_stem("baselines_phone") if phone else RESULTS
+    results.parent.mkdir(parents=True, exist_ok=True)
+    with results.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
-    print_summary(rows, list(methods))
+    print_summary(rows, list(methods), results)
 
 
-def print_summary(rows: list[dict], methods: list[str]) -> None:
+def print_summary(rows: list[dict], methods: list[str], results: Path = RESULTS) -> None:
     by_photo = {(r["photo"], r["method"]): r for r in rows}
     photos = sorted({r["photo"] for r in rows})
     print(f"\nScores on {len(photos)} test photos (compared with Expert C's edits):\n")
@@ -132,7 +136,7 @@ def print_summary(rows: list[dict], methods: list[str]) -> None:
         mean_de = sum(r["delta_e"] for r in mine) / len(mine)
         wins = sum(r["psnr"] > by_photo[(r["photo"], "nothing")]["psnr"] for r in mine) / len(mine)
         print(f"{method:<10}{mean_psnr:>19.2f} dB{mean_de:>24.2f}{wins:>21.0%}")
-    print(f"\nEvery photo's scores and slider values: {RESULTS}")
+    print(f"\nEvery photo's scores and slider values: {results}")
 
 
 if __name__ == "__main__":
@@ -140,8 +144,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model", nargs="?", const="checkpoints/slider_net.pt", help="also score the trained AI (default: %(const)s)"
     )
+    parser.add_argument("--phone", action="store_true", help="make the test photos look like phone photos first")
     args = parser.parse_args()
     methods = dict(METHODS)
     if args.model:  # listed before "best", so the table reads floor, baseline, AI, ceiling
         methods = {"nothing": nothing, "auto": auto, "model": trained_model(Path(args.model)), "best": best_sliders}
-    main(methods)
+    main(methods, args.phone)

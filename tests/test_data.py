@@ -2,6 +2,7 @@
 run without downloading anything."""
 
 import io
+import random
 
 import numpy as np
 import pytest
@@ -9,6 +10,7 @@ import torch
 from PIL import Image, ImageCms
 
 from kelvin.data import FiveK, split_names
+from kelvin.data.phone import phone_look
 from kelvin.data.prepare_fivek import centre_crop, match_score, save_pair, to_srgb, upright
 
 
@@ -66,6 +68,22 @@ def test_only_training_photos_are_flipped(fake_fivek):
     assert FiveK("train", data_dir=fake_fivek).flip
     assert not FiveK("val", data_dir=fake_fivek).flip
     assert not FiveK("test", data_dir=fake_fivek).flip
+
+
+def test_phone_look_is_part_way_to_the_expert():
+    torch.manual_seed(0)
+    before = torch.rand(3, 16, 16) * 0.5
+    after = (before + 0.3).clamp(0, 1)
+    phone = phone_look(before, after, random.Random(0))
+    assert phone.shape == before.shape
+    assert 0 <= phone.min() and phone.max() <= 1
+    assert before.mean() < phone.mean()  # the phone has done part of the job already
+
+
+def test_phone_style_photos_are_the_same_every_time_outside_training(fake_fivek):
+    val = FiveK("val", size=32, data_dir=fake_fivek, phone=1.0)
+    assert torch.equal(val[0][0], val[0][0])
+    assert not torch.equal(val[0][0], FiveK("val", size=32, data_dir=fake_fivek)[0][0])
 
 
 def test_photo_without_a_profile_is_left_alone():

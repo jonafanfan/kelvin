@@ -27,6 +27,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
+from .phone import phone_look
 from .prepare_fivek import DATA_DIR, MATCHES_FILE
 
 SPLITS = {"train": (1, 4000), "val": (4001, 4500), "test": (4501, 5000)}  # first and last photo number
@@ -73,10 +74,13 @@ class FiveK(Dataset):
     the real one. Squares are needed so photos can be stacked into a batch.
     """
 
-    def __init__(self, split: str, size: int = 256, data_dir: Path = DATA_DIR):
+    def __init__(self, split: str, size: int = 256, data_dir: Path = DATA_DIR, phone: float = 0.0):
+        """phone: the share of before photos made to look like phone photos
+        (see phone.py). Training uses some; 1.0 makes a "phone photos" test."""
         self.names = split_names(split, data_dir)
         self.size = size
         self.data_dir = data_dir
+        self.phone = phone
         # Only training photos get flipped. Validation and test photos must be
         # identical every time, or scores from different days couldn't be compared.
         self.flip = split == "train"
@@ -92,6 +96,11 @@ class FiveK(Dataset):
         # a free way to show the AI "new" photos. It's called data augmentation.
         if self.flip and random.random() < 0.5:
             before, after = before.flip(-1), after.flip(-1)
+        # Training draws fresh random phone looks every time. Other splits use
+        # the photo's number as the seed, so they get the same look every time.
+        rng = random if self.flip else random.Random(i)
+        if rng.random() < self.phone:
+            before = phone_look(before, after, rng)
         return before, after
 
     def _load(self, path: Path) -> torch.Tensor:
