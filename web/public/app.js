@@ -9,12 +9,19 @@ import { drawHistogram } from "./histogram.js";
 // Big phone photos have 12+ million pixels. Editing a smaller copy on screen
 // keeps the sliders smooth; Save applies the same edits to the full photo.
 const PREVIEW_MAX_SIDE = 1024;
+// While a slider is being dragged, redraw a half-size copy (a quarter of the
+// pixels, so about 4 times faster), then the full preview once it stops.
+const QUICK_SCALE = 0.5;
+const FULL_REDRAW_AFTER = 150; // ms without slider movement
 
 const $ = (id) => document.getElementById(id);
 const state = {
   photo: null, // the opened photo, full size (an ImageBitmap)
   name: "",
   preview: null, // the shrunk original as r,g,b,r,g,b... from 0 to 1
+  input: null, // the same with a whisper of noise added: what actually gets edited (see dither)
+  quick: null, // { input, canvas }: the half-size copy for redrawing while dragging
+  ai: null, // { params, reasons }: the AI's suggestion at full strength, once Auto has run
   edited: null,
   values: neutralParams(),
 };
@@ -62,35 +69,75 @@ function setSlider(name, value, who) {
 // Drawing
 // ---------------------------------------------------------------------------
 
-// Sliders fire many times a second; redraw at most once per screen refresh.
+// Sliders fire many times a second; redraw at most once per screen refresh,
+// using the quick half-size copy, and in full detail once they stop.
 let pending = false;
+let fullRedraw = null;
 function scheduleRender() {
-  if (pending || !state.preview) return;
+  if (!state.preview) return;
+  clearTimeout(fullRedraw);
+  fullRedraw = setTimeout(render, FULL_REDRAW_AFTER);
+  if (pending) return;
   pending = true;
   requestAnimationFrame(() => {
     pending = false;
-    render();
+    render({ quick: true });
   });
 }
 
-function render() {
+function render({ quick = false } = {}) {
   if (readyToShare) {
     readyToShare = null; // the photo has changed, so the one waiting to be saved is out of date
     $("save").textContent = "Save";
   }
-  state.edited = applyEdits(state.preview, state.values);
+  if (quick) {
+    const edited = applyEdits(state.quick.input, state.values);
+    putPixels(state.quick.canvas, edited);
+    $("after").getContext("2d").drawImage(state.quick.canvas, 0, 0, $("after").width, $("after").height);
+    drawHistogram($("histogram"), edited, state.preview);
+    return;
+  }
+  clearTimeout(fullRedraw);
+  state.edited = applyEdits(state.input, state.values);
   putPixels($("after"), state.edited);
   drawHistogram($("histogram"), state.edited, state.preview);
 }
 
+// ---------------------------------------------------------------------------
+// Dithering: a whisper of random noise that hides "banding"
+// ---------------------------------------------------------------------------
+// Photos store 256 brightness levels per colour. When an edit stretches a
+// smooth sky, neighbouring levels get pulled apart and the sky shows steps,
+// like contour lines. Adding noise smaller than one level *before* editing
+// scatters those steps into fine grain your eye doesn't see; rounding the
+// result randomly up or down (instead of always to the nearest) does the same
+// on the way out. Random numbers are slow to make, so we make a batch once.
+const NOISE = Float32Array.from({ length: 65536 }, Math.random);
+let noiseAt = 0;
+const noise = () => NOISE[(noiseAt = (noiseAt + 1) & 65535)];
+
+function dither(pixels) {
+  const out = new Float32Array(pixels.length);
+  for (let i = 0; i < pixels.length; i++) {
+    const v = pixels[i] + (noise() - 0.5) / 255;
+    out[i] = v < 0 ? 0 : v > 1 ? 1 : v;
+  }
+  return out;
+}
+
+// Edited r,g,b floats -> RGBA bytes, rounding randomly up or down (see above)
+function toBytes(pixels, rgba) {
+  for (let i = 0, j = 0; i < pixels.length; i += 3, j += 4) {
+    rgba[j] = pixels[i] * 255 + noise() - 0.5;
+    rgba[j + 1] = pixels[i + 1] * 255 + noise() - 0.5;
+    rgba[j + 2] = pixels[i + 2] * 255 + noise() - 0.5;
+    rgba[j + 3] = 255;
+  }
+}
+
 function putPixels(canvas, pixels) {
   const image = canvas.getContext("2d").createImageData(canvas.width, canvas.height);
-  for (let i = 0, j = 0; i < pixels.length; i += 3, j += 4) {
-    image.data[j] = pixels[i] * 255 + 0.5;
-    image.data[j + 1] = pixels[i + 1] * 255 + 0.5;
-    image.data[j + 2] = pixels[i + 2] * 255 + 0.5;
-    image.data[j + 3] = 255;
-  }
+  toBytes(pixels, image.data);
   canvas.getContext("2d").putImageData(image, 0, 0);
 }
 
@@ -143,6 +190,14 @@ async function openPhoto(file) {
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(photo, 0, 0, width, height);
   state.preview = toFloats(ctx.getImageData(0, 0, width, height).data);
+  state.input = dither(state.preview);
+  const quick = document.createElement("canvas");
+  quick.width = Math.max(1, Math.round(width * QUICK_SCALE));
+  quick.height = Math.max(1, Math.round(height * QUICK_SCALE));
+  const quickCtx = quick.getContext("2d");
+  quickCtx.imageSmoothingQuality = "high";
+  quickCtx.drawImage(photo, 0, 0, quick.width, quick.height);
+  state.quick = { canvas: quick, input: dither(toFloats(quickCtx.getImageData(0, 0, quick.width, quick.height).data)) };
 
   $("welcome").hidden = true;
   $("editor").hidden = false;
@@ -157,9 +212,53 @@ async function openPhoto(file) {
 
 function reset() {
   for (const s of SLIDERS) setSlider(s.name, 0, "you");
+  state.ai = null;
+  $("strength-row").hidden = true;
   showReasons();
   render();
 }
+
+// ---------------------------------------------------------------------------
+// Auto strength: how much of the AI's edit to use
+// ---------------------------------------------------------------------------
+// The AI learned on flat, unprocessed camera files, and tends to push hard.
+// Phone photos are already processed, so the full edit is often too much.
+// 70% is the default; the person's own choice is remembered for next time.
+
+const DEFAULT_STRENGTH = 0.7;
+let strength = DEFAULT_STRENGTH;
+try {
+  strength = Number(localStorage.getItem("kelvin-strength") ?? DEFAULT_STRENGTH);
+} catch {} // private browsing can block storage: just use the default
+if (!(strength >= 0 && strength <= 1)) strength = DEFAULT_STRENGTH;
+
+function showStrength() {
+  $("strength").value = strength;
+  $("strength").style.setProperty("--to", `${strength * 100}%`);
+  $("strength-value").textContent = `${Math.round(strength * 100)}%`;
+}
+
+// Scale the AI's sliders by the strength. Sliders you've moved yourself
+// (orange) are yours, so they stay as you left them.
+function applyAI({ fresh = false } = {}) {
+  const { params, reasons } = state.ai;
+  for (const s of SLIDERS) {
+    if (!fresh && !rows[s.name].classList.contains("by-ai")) continue;
+    const value = Math.round(params[s.name] * strength * 100) / 100;
+    setSlider(s.name, value, params[s.name] ? "ai" : "you");
+  }
+  showReasons(SLIDERS.filter((s) => s.name in reasons).map((s) => [s.label, state.values[s.name], reasons[s.name]]));
+}
+
+$("strength").addEventListener("input", () => {
+  strength = Number($("strength").value);
+  showStrength();
+  try {
+    localStorage.setItem("kelvin-strength", strength);
+  } catch {}
+  applyAI();
+  scheduleRender();
+});
 
 $("open").addEventListener("click", () => $("file").click());
 $("welcome-open").addEventListener("click", () => $("file").click());
@@ -188,10 +287,11 @@ $("auto").addEventListener("click", async () => {
   button.disabled = true;
   button.textContent = "Thinking…";
   try {
-    const { params, reasons } = await aiSuggest(state.photo);
-    for (const s of SLIDERS) setSlider(s.name, params[s.name], params[s.name] ? "ai" : "you");
-    showReasons(SLIDERS.filter((s) => s.name in reasons).map((s) => [s.label, params[s.name], reasons[s.name]]));
-    askForFeedback(params);
+    state.ai = await aiSuggest(state.photo);
+    showStrength();
+    $("strength-row").hidden = false;
+    applyAI({ fresh: true });
+    askForFeedback(state.ai.params); // the AI's own choice, at full strength
     render();
   } catch (error) {
     console.error(error);
@@ -373,12 +473,7 @@ async function editFullSize() {
   for (let top = 0; top < height; top += strip) {
     const rowsHere = Math.min(strip, height - top);
     const part = ctx.getImageData(0, top, width, rowsHere);
-    const edited = applyEdits(toFloats(part.data), state.values);
-    for (let i = 0, j = 0; i < edited.length; i += 3, j += 4) {
-      part.data[j] = edited[i] * 255 + 0.5;
-      part.data[j + 1] = edited[i + 1] * 255 + 0.5;
-      part.data[j + 2] = edited[i + 2] * 255 + 0.5;
-    }
+    toBytes(applyEdits(dither(toFloats(part.data)), state.values), part.data);
     ctx.putImageData(part, 0, top);
   }
   return new Promise((done) => canvas.toBlob(done, "image/jpeg", 0.92));
